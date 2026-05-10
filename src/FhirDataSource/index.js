@@ -188,8 +188,11 @@ function createFhirApi(fhirConfig, servicesManager) {
     Object.assign(_config, fhirConfig);
   }
 
-  if (process.env.SMART_CLIENT_ID) {
+  if (typeof process !== 'undefined' && process.env && process.env.SMART_CLIENT_ID) {
     _config.smartClientId = process.env.SMART_CLIENT_ID;
+    console.log('[FHIR] SMART_CLIENT_ID loaded from environment:', _config.smartClientId);
+  } else {
+    console.warn('[FHIR] SMART_CLIENT_ID not set in environment variables. SMART on FHIR authentication will only work if configured via Preferences or localStorage.');
   }
 
   // Check localStorage for user-configured SMART settings (highest priority)
@@ -202,6 +205,15 @@ function createFhirApi(fhirConfig, servicesManager) {
       if (parsed.fhirBaseUrl) _config.fhirBaseUrl = parsed.fhirBaseUrl;
     } catch (e) { /* ignore parse errors */ }
   }
+
+  console.log('[FHIR] Data source initialized with config:', {
+    fhirBaseUrl: _config.fhirBaseUrl,
+    smartClientId: _config.smartClientId || '(not set)',
+    smartScope: _config.smartScope || '(default)',
+    source: _config.smartClientId
+      ? (savedSmartConfig ? 'localStorage' : 'environment')
+      : 'none',
+  });
 
   const implementation = {
     initialize: async ({ params, query }) => {
