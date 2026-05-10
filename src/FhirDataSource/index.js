@@ -188,7 +188,7 @@ function createFhirApi(fhirConfig, servicesManager) {
     Object.assign(_config, fhirConfig);
   }
 
-  if (typeof process !== 'undefined' && process.env && process.env.SMART_CLIENT_ID) {
+  if (process.env.SMART_CLIENT_ID) {
     _config.smartClientId = process.env.SMART_CLIENT_ID;
     console.log('[FHIR] SMART_CLIENT_ID loaded from environment:', _config.smartClientId);
   } else {
