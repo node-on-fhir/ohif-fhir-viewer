@@ -135,10 +135,10 @@ function SmartPreferencesModal({ hide }: { hide: () => void }) {
       const appOrigin = window.location.origin;
 
       if (parsed.origin !== appOrigin) {
-        // Cross-origin: use the webpack /fhir-proxy to avoid CORS preflight issues
+        // Cross-origin: use the FHIR server origin directly (SMART endpoints support CORS)
         return {
-          registrationUrl: appOrigin + '/fhir-proxy/oauth/registration',
-          fhirServerRootForReg: '/fhir-proxy',
+          registrationUrl: parsed.origin + '/oauth/registration',
+          fhirServerRootForReg: parsed.origin,
         };
       }
       // Same origin: use directly

@@ -313,7 +313,7 @@ function createFhirApi(fhirConfig, servicesManager) {
       // ── CASE B: EHR launch — discover endpoints & redirect to authorize ──
       if (iss && launch) {
         console.log('[FHIR] SMART EHR launch detected, starting OAuth flow...');
-        const clientId = _config.smartClientId || '';
+        const clientId = qGet('client_id') || _config.smartClientId || '';
         if (!clientId) {
           console.error('[FHIR] No smartClientId configured — cannot start OAuth flow');
           const { uiNotificationService } = _servicesManager?.services || {};
