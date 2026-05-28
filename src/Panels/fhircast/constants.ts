@@ -1,7 +1,9 @@
 import { EventType } from './types';
 
 export const DEFAULT_HUB_URL = '/fhir-proxy/api/hub';
-export const DEFAULT_WS_URL = 'ws://localhost:3000/fhir-proxy/bind';
+export const DEFAULT_WS_URL = typeof window !== 'undefined'
+  ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/fhir-proxy/bind`
+  : 'ws://localhost:3000/fhir-proxy/bind';
 export const DEFAULT_TOPIC = 'DrXRay';
 export const DEFAULT_SECRET = 'secret';
 export const DEFAULT_LEASE = 999;

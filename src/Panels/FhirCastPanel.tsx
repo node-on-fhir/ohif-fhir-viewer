@@ -18,6 +18,7 @@ function FhirCastPanel() {
   if (config.iss) {
     try {
       const issUrl = new URL(config.iss);
+      console.log('[FhirCastPanel] Deriving FHIRcast URLs from ISS:', config.iss, 'port:', issUrl.port || '(default)');
       const appOrigin = window.location.origin;
 
       if (issUrl.origin !== appOrigin) {

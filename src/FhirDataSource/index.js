@@ -30,8 +30,8 @@ const metadataProvider = OHIF.classes.MetadataProvider;
 const PLACEHOLDER_STUDY_UID = '__fhir_pending__';
 
 let _config = {
-  fhirBaseUrl: 'http://localhost:3000/baseR4',
-  fhirServerRoot: 'http://localhost:3000',
+  fhirBaseUrl: '/fhir-proxy/baseR4',
+  fhirServerRoot: '/fhir-proxy',
   patientId: '',
   authToken: '',
   iss: '',
