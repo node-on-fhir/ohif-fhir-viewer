@@ -12,6 +12,8 @@ interface SubscribeParams {
   lease?: number;
   /** The real server WebSocket URL for hub.channel.endpoint (before proxy rewrite). */
   serverWsUrl?: string;
+  /** Bearer token for Authorization header (e.g. from SMART auth flow). */
+  authToken?: string;
 }
 
 function generateEndpointId(): string {
@@ -34,7 +36,8 @@ async function postToHub(
   wsUrl: string,
   endpointId: string,
   secret: string,
-  lease: number
+  lease: number,
+  authToken?: string
 ): Promise<Response> {
   const params = new URLSearchParams();
   params.set(SubscriptionParams.mode, mode);
@@ -45,9 +48,16 @@ async function postToHub(
   params.set(SubscriptionParams.channelType, WEBSOCKET_CHANNEL_TYPE);
   params.set(SubscriptionParams.channelEndpoint, `${wsUrl}/${endpointId}`);
 
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/x-www-form-urlencoded',
+  };
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
+  }
+
   return fetch(hubUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers,
     body: params.toString(),
   });
 }
@@ -87,6 +97,7 @@ export function useFhircastSubscription() {
       secret = DEFAULT_SECRET,
       lease = DEFAULT_LEASE,
       serverWsUrl,
+      authToken,
     } = params;
 
     // Close any existing connection first
@@ -111,7 +122,8 @@ export function useFhircastSubscription() {
       endpointWsUrl,
       endpointId,
       secret,
-      lease
+      lease,
+      authToken
     );
 
     if (!response.ok) {
@@ -232,6 +244,7 @@ export function useFhircastSubscription() {
         secret = DEFAULT_SECRET,
         lease = DEFAULT_LEASE,
         serverWsUrl,
+        authToken,
       } = params;
 
       const endpointWsUrl = serverWsUrl || wsUrl;
@@ -244,7 +257,8 @@ export function useFhircastSubscription() {
           endpointWsUrl,
           endpointId,
           secret,
-          lease
+          lease,
+          authToken
         );
       } catch (err) {
         console.warn('[FhirCast] Unsubscribe POST failed:', err);

@@ -130,7 +130,7 @@ function FhirCastPanel() {
 
   const handleSubscribe = async () => {
     try {
-      await subscribe({ hubUrl, wsUrl, topic, events: selectedEvents });
+      await subscribe({ hubUrl, wsUrl, topic, events: selectedEvents, authToken: config.authToken || undefined });
       setSubscriptions((prev) => ({
         ...prev,
         [topic]: { topic, events: [...selectedEvents], status: 'active' },
