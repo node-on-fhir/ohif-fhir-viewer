@@ -120,11 +120,13 @@ export function useFhircastSubscription() {
       );
     }
 
-    // 2. Open WebSocket — use wsUrl (through the proxy), not serverWsUrl
+    // 2. Use the server-returned WebSocket endpoint URL (per FHIRcast spec §2-4)
+    const responseBody = await response.json();
+    const fullWsUrl = responseBody['hub.channel.endpoint'] || `${wsUrl}/${endpointId}`;
+
     setWsStatus('Opening');
     unsubscribedRef.current = false;
     reconnectAttemptsRef.current = 0;
-    const fullWsUrl = `${wsUrl}/${endpointId}`;
 
     return new Promise<void>((resolve, reject) => {
       const ws = new WebSocket(fullWsUrl);
@@ -138,8 +140,8 @@ export function useFhircastSubscription() {
         try {
           const data = JSON.parse(e.data);
 
-          // Binding confirmation from hub
-          if (data.bound === true) {
+          // Binding confirmation from hub (accept both legacy and spec-compliant formats)
+          if (data.bound === true || data['hub.mode'] === 'subscribe') {
             console.log('[FhirCast] WebSocket bound');
             setWsStatus('Open');
             resolve();
@@ -153,6 +155,11 @@ export function useFhircastSubscription() {
             event: data.event || data,
           };
           setReceivedEvents((prev) => [event, ...prev]);
+
+          // Send event ACK per FHIRcast spec (within 10s to avoid SyncError)
+          if (data.id && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ id: data.id, status: '200' }));
+          }
         } catch (err) {
           console.warn('[FhirCast] Failed to parse WS message:', err);
         }

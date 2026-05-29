@@ -4,7 +4,7 @@ export const SubscriptionParams = {
   events: 'hub.events',
   secret: 'hub.secret',
   topic: 'hub.topic',
-  lease: 'hub.lease',
+  lease: 'hub.lease_seconds',
   channelType: 'hub.channel.type',
   channelEndpoint: 'hub.channel.endpoint',
 } as const;

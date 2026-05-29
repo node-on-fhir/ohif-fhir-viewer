@@ -9,6 +9,7 @@ import {
   fetchDocumentReferences,
   fetchDicomFile,
   createDocumentReference,
+  setProxyTarget,
 } from './fhirClient';
 import { imagingStudyToStudySummary, extractSeriesMetadata } from './fhirToOhif';
 import { loadDicomFromAttachment, parseDicomArrayBuffer } from './dicomLoader';
@@ -276,6 +277,7 @@ function createFhirApi(fhirConfig, servicesManager) {
             if (issUrl.origin !== appOrigin) {
               _config.fhirBaseUrl = '/fhir-proxy' + issUrl.pathname;
               _config.fhirServerRoot = '/fhir-proxy';
+              setProxyTarget(issUrl.origin);
             }
           } catch (e) {
             // keep absolute URLs if parsing fails
@@ -392,6 +394,7 @@ function createFhirApi(fhirConfig, servicesManager) {
           if (issUrl.origin !== appOriginC) {
             _config.fhirBaseUrl = '/fhir-proxy' + issUrl.pathname;
             _config.fhirServerRoot = '/fhir-proxy';
+            setProxyTarget(issUrl.origin);
           }
         } catch (e) {
           // keep absolute URLs if parsing fails

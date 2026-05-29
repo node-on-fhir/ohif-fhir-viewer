@@ -14,26 +14,13 @@ function FhirCastPanel() {
   // Derive Hub URL and WebSocket URL from ISS origin
   let initialHubUrl = DEFAULT_HUB_URL;
   let initialWsUrl = DEFAULT_WS_URL;
-  let initialServerWsUrl: string | undefined;
   if (config.iss) {
     try {
       const issUrl = new URL(config.iss);
       console.log('[FhirCastPanel] Deriving FHIRcast URLs from ISS:', config.iss, 'port:', issUrl.port || '(default)');
-      const appOrigin = window.location.origin;
-
-      if (issUrl.origin !== appOrigin) {
-        // Cross-origin: route through /fhir-proxy (same as FhirDataSource)
-        initialHubUrl = `${appOrigin}/fhir-proxy/api/hub`;
-        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        initialWsUrl = `${wsProtocol}//${window.location.host}/fhir-proxy/bind`;
-        // The real server URL for hub.channel.endpoint
-        const serverWsProtocol = issUrl.protocol === 'https:' ? 'wss:' : 'ws:';
-        initialServerWsUrl = `${serverWsProtocol}//${issUrl.host}/bind`;
-      } else {
-        initialHubUrl = `${issUrl.origin}/api/hub`;
-        const wsProtocol = issUrl.protocol === 'https:' ? 'wss:' : 'ws:';
-        initialWsUrl = `${wsProtocol}//${issUrl.host}/bind`;
-      }
+      initialHubUrl = `${issUrl.origin}/api/hub`;
+      const wsProtocol = issUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+      initialWsUrl = `${wsProtocol}//${issUrl.host}/bind`;
     } catch (e) {
       // malformed ISS, keep defaults
     }
@@ -45,7 +32,6 @@ function FhirCastPanel() {
   // Form state
   const [hubUrl, setHubUrl] = useState(initialHubUrl);
   const [wsUrl, setWsUrl] = useState(initialWsUrl);
-  const [serverWsUrl] = useState(initialServerWsUrl);
   const [topic, setTopic] = useState(initialTopic);
   const [selectedEvents, setSelectedEvents] = useState<string[]>([...DEFAULT_SELECTED_EVENTS]);
   const [saveToClient, setSaveToClient] = useState(true);
@@ -58,6 +44,55 @@ function FhirCastPanel() {
   // ImagingStudy context state
   const [imagingStudyStatus, setImagingStudyStatus] = useState<string>('unknown');
   const [imagingStudyId, setImagingStudyId] = useState<string>('');
+
+  // Auto-discover hub capabilities on mount
+  useEffect(() => {
+    // Try hub-relative path first (Medplum mounts it as a sub-route of the hub router),
+    // then fall back to origin-relative path (Node on FHIR serves it at the server root).
+    const hubWellKnown = `${hubUrl}/.well-known/fhircast-configuration`;
+    const originWellKnown = (() => {
+      try {
+        const u = new URL(hubUrl, window.location.origin);
+        return `${u.origin}/.well-known/fhircast-configuration`;
+      } catch {
+        return null;
+      }
+    })();
+
+    let cancelled = false;
+
+    fetch(hubWellKnown)
+      .then(res => {
+        if (!res.ok) throw new Error(`${res.status}`);
+        return res.json();
+      })
+      .then(config => {
+        if (!cancelled) {
+          console.log('[FhirCast] Hub capabilities discovered:', config);
+        }
+      })
+      .catch(() => {
+        // Try origin-relative path as fallback
+        if (cancelled || !originWellKnown || originWellKnown === hubWellKnown) return;
+        fetch(originWellKnown)
+          .then(res => {
+            if (!res.ok) throw new Error(`${res.status}`);
+            return res.json();
+          })
+          .then(config => {
+            if (!cancelled) {
+              console.log('[FhirCast] Hub capabilities discovered (origin):', config);
+            }
+          })
+          .catch(err => {
+            if (!cancelled) {
+              console.warn('[FhirCast] Hub discovery failed (will use defaults):', err.message);
+            }
+          });
+      });
+
+    return () => { cancelled = true; };
+  }, [hubUrl]);
 
   // Read initial ImagingStudy status from the store on mount
   useEffect(() => {
@@ -95,7 +130,7 @@ function FhirCastPanel() {
 
   const handleSubscribe = async () => {
     try {
-      await subscribe({ hubUrl, wsUrl, topic, events: selectedEvents, serverWsUrl });
+      await subscribe({ hubUrl, wsUrl, topic, events: selectedEvents });
       setSubscriptions((prev) => ({
         ...prev,
         [topic]: { topic, events: [...selectedEvents], status: 'active' },
