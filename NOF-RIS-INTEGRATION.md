@@ -91,7 +91,13 @@ Alternatively, POST the equivalent JSON to the `/oauth/register` endpoint:
 }
 ```
 
-After registration, copy the generated `client_id`. You can supply it to OHIF either as the `smartClientId` field in the data source configuration, or — without editing any tracked files — via the `SMART_CLIENT_ID` environment variable (see step 6), which overrides the data-source value.
+After registration, copy the generated `client_id`. OHIF reads it at **runtime** from one of three browser-native surfaces, in most-specific-wins order:
+
+1. **URL** — `?client_id=…` on the SMART launch (per-launch; lets one deployment face multiple registrations).
+2. **SMART Preferences panel** — entered/registered in OHIF, saved to `localStorage` (per-user).
+3. **`window.config`** — the `smartClientId` field in the data source `configuration` of the served `app-config.js` (per-deployment).
+
+There is **no build-time environment variable** — OHIF is a static SPA, so the client ID must arrive at runtime through one of the above. (For containerized deployments, the `app-config.js` value can be templated from an env var at container startup via the OHIF Docker entrypoint; pure-static hosts edit the served config or use the Preferences panel.)
 
 ## 6. Install and Run the OHIF Viewer
 
@@ -111,14 +117,20 @@ cd ..
 yarn install
 ```
 
-The extension and its bundled `node-on-fhir` mode are injected at startup through the `EXTRA_EXTENSIONS` / `EXTRA_MODES` environment variables — no edits to `pluginConfig.json` are required. Set `SMART_CLIENT_ID` to the `client_id` from step 5, and `FHIR_SERVER` to the RIS you started above:
+The extension and its bundled `node-on-fhir` mode are injected at startup through the `EXTRA_EXTENSIONS` / `EXTRA_MODES` environment variables — no edits to `pluginConfig.json` are required. These two are genuine **build/dev-server** variables (read by the Node-based dev server), unlike the FHIR client ID and server URL, which are runtime config:
 
 ```bash
-EXTRA_EXTENSIONS=@ohif/extension-nof-ohif-viewer EXTRA_MODES=node-on-fhir SMART_CLIENT_ID=<client_id_from_step_5> FHIR_SERVER=http://localhost:3200 yarn dev
+EXTRA_EXTENSIONS=@ohif/extension-nof-ohif-viewer EXTRA_MODES=node-on-fhir=extensions/ohif-fhir-viewer/mode yarn dev
 ```
 
 > **Note on the mode path:** the `node-on-fhir` mode ships nested inside the extension at `extensions/ohif-fhir-viewer/mode`, so it isn't a top-level workspace package. The `=<directory>` suffix points `EXTRA_MODES` straight at it. (Alternatively, copy that folder to `modes/node-on-fhir` and use the bare `EXTRA_MODES=node-on-fhir`.)
->
-> **Note on `FHIR_SERVER`:** the `/fhir-proxy` dev-server route defaults to `http://localhost:3100`. Because this guide runs the RIS on `3200`, `FHIR_SERVER` must be set to match — otherwise OHIF proxies FHIR requests to the wrong port.
 
-OHIF starts on `http://localhost:3000` by default (override with `OHIF_PORT`). Open the viewer, register it as a SMART client from the Preferences page if you haven't already, then complete the SMART launch from the RIS reading worklist.
+**Point OHIF at the RIS (runtime config).** The viewer calls the FHIR server **directly** (no proxy), so set the FHIR base URL and client ID at runtime — there is no `FHIR_SERVER` / `SMART_CLIENT_ID` build var. Either:
+
+- set `fhirBaseUrl` (e.g. `http://localhost:3200/baseR4`) and `smartClientId` in the data source `configuration` of your served `app-config.js`, **or**
+- enter them in the **SMART Preferences** panel inside OHIF, **or**
+- let a SMART launch supply them via the `iss` / `?client_id=` URL params.
+
+> **Prerequisite — CORS on Node-on-FHIR.** Because the browser now calls the FHIR and OAuth endpoints cross-origin, the RIS must return CORS headers that allow the OHIF origin: `Access-Control-Allow-Origin` (echo the OHIF origin), `Access-Control-Allow-Headers: Authorization, Content-Type`, `Access-Control-Allow-Methods: GET, POST, PUT, OPTIONS`, and `Access-Control-Allow-Credentials: true` — covering the FHIR base, the `token`, and the `registration` endpoints. The FHIRcast hub must also accept the OHIF `Origin` for WebSocket upgrades.
+
+OHIF starts on `http://localhost:3000` by default (override with `OHIF_PORT`). Open the viewer, register it as a SMART client from the Preferences page if you haven't already, then complete the SMART launch from the RIS reading worklist. With CORS in place, FHIR requests go straight to `:3200` (verify in DevTools → Network: absolute origin, **no `/fhir-proxy`**).
