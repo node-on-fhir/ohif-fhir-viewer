@@ -126,22 +126,13 @@ function SmartPreferencesModal({ hide }: { hide: () => void }) {
     hotkeysManager.restoreDefaultBindings();
   };
 
-  // Derive the registration endpoint from the FHIR Server URL.
-  // If the FHIR server is cross-origin, route through /fhir-proxy to avoid CORS.
+  // Derive the registration endpoint from the FHIR Server URL. The browser
+  // calls the FHIR server directly at its absolute origin (no proxy), so the
+  // server must allow the OHIF origin via CORS.
   const { registrationUrl, fhirServerRootForReg } = useMemo(() => {
     if (!state.fhirBaseUrl) return { registrationUrl: '', fhirServerRootForReg: '' };
     try {
       const parsed = new URL(state.fhirBaseUrl);
-      const appOrigin = window.location.origin;
-
-      if (parsed.origin !== appOrigin) {
-        // Cross-origin: use the FHIR server origin directly (SMART endpoints support CORS)
-        return {
-          registrationUrl: parsed.origin + '/oauth/registration',
-          fhirServerRootForReg: parsed.origin,
-        };
-      }
-      // Same origin: use directly
       return {
         registrationUrl: parsed.origin + '/oauth/registration',
         fhirServerRootForReg: parsed.origin,

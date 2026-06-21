@@ -9,7 +9,6 @@ import {
   fetchDocumentReferences,
   fetchDicomFile,
   createDocumentReference,
-  setProxyTarget,
 } from './fhirClient';
 import { imagingStudyToStudySummary, extractSeriesMetadata } from './fhirToOhif';
 import { loadDicomFromAttachment, parseDicomArrayBuffer } from './dicomLoader';
@@ -31,8 +30,12 @@ const metadataProvider = OHIF.classes.MetadataProvider;
 const PLACEHOLDER_STUDY_UID = '__fhir_pending__';
 
 let _config = {
-  fhirBaseUrl: '/fhir-proxy/baseR4',
-  fhirServerRoot: '/fhir-proxy',
+  // Absolute FHIR URLs — the browser calls the FHIR server directly (CORS),
+  // so the server must allow the OHIF origin. These are dev fallbacks; a
+  // deployment overrides them via the data-source `configuration` in
+  // window.config, and a SMART launch overrides them again from the `iss` param.
+  fhirBaseUrl: 'http://localhost:3200/baseR4',
+  fhirServerRoot: 'http://localhost:3200',
   patientId: '',
   authToken: '',
   iss: '',
@@ -183,37 +186,64 @@ function _showFhirError(servicesManager, error) {
   });
 }
 
+// Resolve the SMART client ID from the browser-native config surfaces, in
+// most-specific-wins order:
+//   1. URL `?client_id=`        — per-launch (a launch URL can carry it so one
+//                                  deployment can face multiple registrations)
+//   2. localStorage             — per-user, set via the SMART Preferences panel
+//   3. window.config            — per-deployment, the data-source `configuration`
+//                                  already merged into `_config` at registration
+// There is no build-time env var: OHIF is a static SPA, so config must arrive at
+// runtime through one of these surfaces.
+function resolveSmartClientId(query) {
+  const fromUrl = query && query.get && query.get('client_id');
+  if (fromUrl) return fromUrl;
+  try {
+    const saved = JSON.parse(localStorage.getItem('fhir_smart_config') || '{}');
+    if (saved.smartClientId) return saved.smartClientId;
+  } catch (e) {
+    /* ignore parse errors */
+  }
+  return _config.smartClientId || '';
+}
+
 function createFhirApi(fhirConfig, servicesManager) {
   _servicesManager = servicesManager;
   if (fhirConfig) {
     Object.assign(_config, fhirConfig);
   }
 
-  if (process.env.SMART_CLIENT_ID) {
-    _config.smartClientId = process.env.SMART_CLIENT_ID;
-    console.log('[FHIR] SMART_CLIENT_ID loaded from environment:', _config.smartClientId);
-  } else {
-    console.warn('[FHIR] SMART_CLIENT_ID not set in environment variables. SMART on FHIR authentication will only work if configured via Preferences or localStorage.');
-  }
+  // Client ID resolves from the data-source `configuration` merged above
+  // (e.g. `smartClientId` in the OHIF data source config). localStorage —
+  // populated by the SMART Preferences panel — overrides it when present.
+  let clientIdSource = _config.smartClientId ? 'dataSourceConfig' : 'none';
 
-  // Check localStorage for user-configured SMART settings (highest priority)
   const savedSmartConfig = localStorage.getItem('fhir_smart_config');
   if (savedSmartConfig) {
     try {
       const parsed = JSON.parse(savedSmartConfig);
-      if (parsed.smartClientId) _config.smartClientId = parsed.smartClientId;
+      if (parsed.smartClientId) {
+        _config.smartClientId = parsed.smartClientId;
+        clientIdSource = 'localStorage';
+      }
       if (parsed.smartScope) _config.smartScope = parsed.smartScope;
       if (parsed.fhirBaseUrl) _config.fhirBaseUrl = parsed.fhirBaseUrl;
     } catch (e) { /* ignore parse errors */ }
+  }
+
+  if (!_config.smartClientId) {
+    console.warn(
+      '[FHIR] No SMART client ID configured. SMART on FHIR authentication ' +
+        'requires `smartClientId` in the data-source configuration, or a value ' +
+        'set via the SMART Preferences panel.'
+    );
   }
 
   console.log('[FHIR] Data source initialized with config:', {
     fhirBaseUrl: _config.fhirBaseUrl,
     smartClientId: _config.smartClientId || '(not set)',
     smartScope: _config.smartScope || '(default)',
-    source: _config.smartClientId
-      ? (savedSmartConfig ? 'localStorage' : 'environment')
-      : 'none',
+    source: clientIdSource,
   });
 
   const implementation = {
@@ -270,19 +300,6 @@ function createFhirApi(fhirConfig, servicesManager) {
             console.warn('[FHIR] Could not parse ISS URL:', e);
           }
 
-          // Rewrite cross-origin FHIR URLs to proxy through the dev server
-          const appOrigin = window.location.origin;
-          try {
-            const issUrl = new URL(authState.iss);
-            if (issUrl.origin !== appOrigin) {
-              _config.fhirBaseUrl = '/fhir-proxy' + issUrl.pathname;
-              _config.fhirServerRoot = '/fhir-proxy';
-              setProxyTarget(issUrl.origin);
-            }
-          } catch (e) {
-            // keep absolute URLs if parsing fails
-          }
-
           // Use patient from token response or saved state
           const patientId = tokenResponse.patient || authState.patientId || '';
           _config.patientId = patientId;
@@ -315,7 +332,7 @@ function createFhirApi(fhirConfig, servicesManager) {
       // ── CASE B: EHR launch — discover endpoints & redirect to authorize ──
       if (iss && launch) {
         console.log('[FHIR] SMART EHR launch detected, starting OAuth flow...');
-        const clientId = qGet('client_id') || _config.smartClientId || '';
+        const clientId = resolveSmartClientId(query);
         if (!clientId) {
           console.error('[FHIR] No smartClientId configured — cannot start OAuth flow');
           const { uiNotificationService } = _servicesManager?.services || {};
@@ -323,7 +340,7 @@ function createFhirApi(fhirConfig, servicesManager) {
             uiNotificationService.show({
               title: 'SMART on FHIR',
               message:
-                'No client ID configured. Set SMART_CLIENT_ID in platform/app/.env and restart the dev server.',
+                'No SMART client ID configured. Set `smartClientId` in the data-source configuration, or via the SMART Preferences panel.',
               type: 'error',
               duration: 15000,
             });
@@ -385,19 +402,6 @@ function createFhirApi(fhirConfig, servicesManager) {
           _config.fhirServerRoot = url.origin;
         } catch (e) {
           console.warn('[FHIR] Could not parse ISS URL:', e);
-        }
-
-        // Rewrite cross-origin FHIR URLs to proxy through the dev server
-        const appOriginC = window.location.origin;
-        try {
-          const issUrl = new URL(iss);
-          if (issUrl.origin !== appOriginC) {
-            _config.fhirBaseUrl = '/fhir-proxy' + issUrl.pathname;
-            _config.fhirServerRoot = '/fhir-proxy';
-            setProxyTarget(issUrl.origin);
-          }
-        } catch (e) {
-          // keep absolute URLs if parsing fails
         }
       }
       if (launch) {

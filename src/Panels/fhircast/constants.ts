@@ -1,9 +1,10 @@
 import { EventType } from './types';
 
-export const DEFAULT_HUB_URL = '/fhir-proxy/api/hub';
-export const DEFAULT_WS_URL = typeof window !== 'undefined'
-  ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/fhir-proxy/bind`
-  : 'ws://localhost:3000/fhir-proxy/bind';
+// Fallback hub/WebSocket URLs used only when no SMART `iss` is configured.
+// When a launch is present, FhirCastPanel derives these from the iss origin.
+// Absolute URLs (no proxy) — the FHIRcast hub must accept the OHIF origin.
+export const DEFAULT_HUB_URL = 'http://localhost:3200/api/hub';
+export const DEFAULT_WS_URL = 'ws://localhost:3200/bind';
 export const DEFAULT_TOPIC = 'DrXRay';
 export const DEFAULT_SECRET = 'secret';
 export const DEFAULT_LEASE = 999;

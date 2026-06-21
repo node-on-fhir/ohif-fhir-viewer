@@ -1,9 +1,3 @@
-let _proxyTarget = '';
-
-export function setProxyTarget(target) {
-  _proxyTarget = target;
-}
-
 let _queryLog = [];
 let _listeners = [];
 
@@ -51,9 +45,6 @@ export async function fhirFetch(baseUrl, path, { authToken, accept, responseType
   }
   if (authToken) {
     headers['Authorization'] = `Bearer ${authToken}`;
-  }
-  if (_proxyTarget) {
-    headers['X-FHIR-Target'] = _proxyTarget;
   }
 
   try {
@@ -120,9 +111,6 @@ export async function fhirPost(baseUrl, path, body, { authToken } = {}) {
   if (authToken) {
     headers['Authorization'] = `Bearer ${authToken}`;
   }
-  if (_proxyTarget) {
-    headers['X-FHIR-Target'] = _proxyTarget;
-  }
 
   try {
     const response = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
@@ -162,9 +150,6 @@ export function fetchDicomFile(serverRoot, fileUrl, opts = {}) {
   const headers = {};
   if (opts.authToken) {
     headers['Authorization'] = `Bearer ${opts.authToken}`;
-  }
-  if (_proxyTarget) {
-    headers['X-FHIR-Target'] = _proxyTarget;
   }
 
   return fetch(url, { headers })
