@@ -37,9 +37,28 @@ function modeFactory({ modeConfiguration }) {
   return {
     id,
     routeName: 'fhir-viewer',
-    displayName: 'Node on FHIR',
+    displayName: 'FHIR Viewer',
     onModeInit: ({ servicesManager, extensionManager }) => {
-      extensionManager.setActiveDataSource('fhir');
+      // The 'fhir' data source instance only exists if it was declared in
+      // window.config.dataSources. When it isn't (e.g. running the stock
+      // config/default.js), register it programmatically so the mode is
+      // self-contained and EXTRA_EXTENSIONS=... works without config edits.
+      // addDataSource is idempotent but does NOT activate an already-existing
+      // source, so activate explicitly when one is already configured.
+      const existing = extensionManager.getDataSources('fhir');
+      if (existing?.[0]) {
+        extensionManager.setActiveDataSource('fhir');
+      } else {
+        extensionManager.addDataSource(
+          {
+            friendlyName: 'FHIR R4 Server',
+            namespace: '@ohif/extension-nof-ohif-viewer.dataSourcesModule.fhir',
+            sourceName: 'fhir',
+            configuration: {},
+          },
+          { activate: true }
+        );
+      }
     },
     onModeEnter: ({ servicesManager, extensionManager, commandsManager }: withAppTypes) => {
       const { measurementService, toolbarService, toolGroupService, customizationService } =
@@ -172,7 +191,7 @@ function modeFactory({ modeConfiguration }) {
             id: ohif.layout,
             props: {
               leftPanels: [ohif.leftPanel],
-              rightPanels: [ohif.rightPanel, awatson.fhirPanel, awatson.fhirCastPanel],
+              rightPanels: [awatson.fhirPanel, awatson.fhirCastPanel, ohif.rightPanel],
               rightPanelInitialExpandedWidth: 480,
               rightPanelMinimumExpandedWidth: 400,
               viewports: [
