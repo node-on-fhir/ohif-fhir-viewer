@@ -25,20 +25,19 @@ cd ..
 yarn install
 ```
 
-The extension and its bundled `fhir-viewer` mode are injected at startup through
-the `EXTRA_EXTENSIONS` / `EXTRA_MODES` environment variables — no edits to
-`pluginConfig.json` are required. The Medplum admin app runs on `:3000` (OHIF's
-default), so start OHIF on **`:3200`** with `OHIF_PORT`:
+The extension is injected at startup through the `EXTRA_EXTENSIONS` environment
+variable — no edits to `pluginConfig.json` are required. Its bundled `fhir-viewer`
+mode is **auto-detected** and registered alongside it (no `EXTRA_MODES` needed).
+The Medplum admin app runs on `:3000` (OHIF's default), so start OHIF on **`:3200`**
+with `OHIF_PORT`:
 
 ```bash
-OHIF_PORT=3200 EXTRA_EXTENSIONS=@ohif/extension-nof-ohif-viewer EXTRA_MODES=fhir-viewer=extensions/ohif-fhir-viewer/mode yarn dev
+OHIF_PORT=3200 EXTRA_EXTENSIONS=@ohif/extension-nof-ohif-viewer yarn dev
 ```
 
-> **Note on the mode path:** the `fhir-viewer` mode ships nested inside the
-> extension at `extensions/ohif-fhir-viewer/mode`, so it isn't a top-level
-> workspace package. The `=<directory>` suffix points `EXTRA_MODES` straight at
-> it. (Alternatively, copy that folder to `modes/fhir-viewer` and use the bare
-> `EXTRA_MODES=fhir-viewer`.)
+> **Mode auto-detection:** when an `EXTRA_EXTENSIONS` package contains a `mode/`
+> subdirectory with a `package.json`, that mode is registered automatically. Use
+> `EXTRA_MODES` only to override or add other modes explicitly.
 
 The viewer is now available at `http://localhost:3200/fhir-viewer`.
 
