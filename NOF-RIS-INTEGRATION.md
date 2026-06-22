@@ -13,8 +13,9 @@ mkdir demo && cd demo
 # install OHIF and the NOF FHIR extension
 git clone https://github.com/OHIF/Viewers
 # link the workspace packages
-yarn install
-yarn dev
+brew install pnpm
+pnpm install
+pnpm dev
 ```
 
 The FHIRcast extension is injected at startup through the `EXTRA_EXTENSIONS`
@@ -29,7 +30,7 @@ cd Viewers/extensions
 git clone https://github.com/node-on-fhir/ohif-fhir-viewer
 cd ..
 
-EXTRA_EXTENSIONS=@ohif/extension-nof-ohif-viewer yarn dev
+EXTRA_EXTENSIONS=@ohif/extension-nof-ohif-viewer pnpm dev
 ```
 
 > **Mode auto-detection:** when an `EXTRA_EXTENSIONS` package contains a `mode/`

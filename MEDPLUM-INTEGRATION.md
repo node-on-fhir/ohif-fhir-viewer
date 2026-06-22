@@ -7,23 +7,21 @@ Medplum is a good fit for this viewer's **CORS-direct** model: it ships with
 `allowedOrigins: "*"` in development, so the browser calls the FHIR and FHIRcast
 endpoints directly — no dev proxy required.
 
-## 6. Install and Run the OHIF Viewer
-
-Begin by installing the OHIF Viewer.
+## 1. Install and Run the OHIF Viewer
+Begin by installing the OHIF Viewer
 
 ```bash
 # create a working directory
 mkdir demo && cd demo
 
-# install OHIF and the FHIR extension
+# install OHIF and the NOF FHIR extension
 git clone https://github.com/OHIF/Viewers
-cd Viewers/extensions
-git clone https://github.com/node-on-fhir/ohif-fhir-viewer
-cd ..
-
 # link the workspace packages
-yarn install
+brew install pnpm
+pnpm install
+pnpm dev
 ```
+
 
 The extension is injected at startup through the `EXTRA_EXTENSIONS` environment
 variable — no edits to `pluginConfig.json` are required. Its bundled `fhir-viewer`
@@ -32,7 +30,7 @@ The Medplum admin app runs on `:3000` (OHIF's default), so start OHIF on **`:320
 with `OHIF_PORT`:
 
 ```bash
-OHIF_PORT=3200 EXTRA_EXTENSIONS=@ohif/extension-nof-ohif-viewer yarn dev
+OHIF_PORT=3200 EXTRA_EXTENSIONS=@ohif/extension-nof-ohif-viewer pnpm dev
 ```
 
 > **Mode auto-detection:** when an `EXTRA_EXTENSIONS` package contains a `mode/`
