@@ -1,10 +1,10 @@
 {
-  "name": "node-on-fhir",
+  "name": "fhir-viewer",
   "version": "0.0.1",
   "description": "Node on FHIR mode with custom actions and hanging protocols",
   "author": "Node on FHIR",
   "license": "MIT",
-  "main": "dist/umd/node-on-fhir/index.umd.js",
+  "main": "dist/umd/fhir-viewer/index.umd.js",
   "files": [
     "dist/**",
     "public/**",

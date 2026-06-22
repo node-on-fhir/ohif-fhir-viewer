@@ -4,7 +4,7 @@
 
 This is a consolidated OHIF Viewer extension that provides custom viewport commands, ECG waveform rendering, a FHIR R4 data source, hanging protocols, panels, and a minimal layout template. It lives at `Viewers/extensions/ohif-viewer/` inside the OHIF monorepo.
 
-The extension ships with a companion mode (`node-on-fhir`) bundled in the `mode/` directory.
+The extension ships with a companion mode (`fhir-viewer`) bundled in the `mode/` directory.
 
 ## Setup
 
@@ -19,10 +19,10 @@ yarn dev                 # start dev server
 
 If the setup script doesn't work, do it by hand:
 
-1. Copy `extensions/ohif-viewer/mode/` → `modes/node-on-fhir/`
+1. Copy `extensions/ohif-viewer/mode/` → `modes/fhir-viewer/`
 2. Edit `platform/app/pluginConfig.json`:
    - Add to `extensions` array: `{ "packageName": "@ohif/extension-nof-ohif-viewer", "version": "0.0.1" }`
-   - Add to `modes` array: `{ "packageName": "node-on-fhir" }`
+   - Add to `modes` array: `{ "packageName": "fhir-viewer" }`
 3. Run `yarn install` from Viewers root
 
 ## Key Identifiers
@@ -31,7 +31,7 @@ If the setup script doesn't work, do it by hand:
 |---|---|
 | Extension package name | `@ohif/extension-nof-ohif-viewer` |
 | Extension ID | read from `package.json` name field via `src/id.js` |
-| Mode package name | `node-on-fhir` |
+| Mode package name | `fhir-viewer` |
 | Mode route | `/fhir-viewer` |
 | Command prefix | `nof.` (e.g. `nof.logViewportData`) |
 | Toolbar button prefix | `nof-ohif-viewer.` |

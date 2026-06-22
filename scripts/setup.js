@@ -7,7 +7,7 @@ const path = require('path');
 const EXTENSION_DIR = path.resolve(__dirname, '..');
 const VIEWERS_ROOT = path.resolve(EXTENSION_DIR, '../..');
 const MODES_DIR = path.join(VIEWERS_ROOT, 'modes');
-const MODE_TARGET = path.join(MODES_DIR, 'node-on-fhir');
+const MODE_TARGET = path.join(MODES_DIR, 'fhir-viewer');
 const MODE_SOURCE = path.join(EXTENSION_DIR, 'mode');
 const PLUGIN_CONFIG = path.join(VIEWERS_ROOT, 'platform', 'app', 'pluginConfig.json');
 const WEBPACK_PWA = path.join(VIEWERS_ROOT, 'platform', 'app', '.webpack', 'webpack.pwa.js');
@@ -18,7 +18,7 @@ const EXTENSION_ENTRY = {
 };
 
 const MODE_ENTRY = {
-  packageName: 'node-on-fhir',
+  packageName: 'fhir-viewer',
 };
 
 // ---------------------------------------------------------------------------
@@ -27,7 +27,7 @@ const MODE_ENTRY = {
 
 function copyMode() {
   if (fs.existsSync(MODE_TARGET)) {
-    console.log('[skip] modes/node-on-fhir/ already exists');
+    console.log('[skip] modes/fhir-viewer/ already exists');
     return false;
   }
 
@@ -37,7 +37,7 @@ function copyMode() {
   }
 
   fs.cpSync(MODE_SOURCE, MODE_TARGET, { recursive: true });
-  console.log('[done] Copied mode/ → modes/node-on-fhir/');
+  console.log('[done] Copied mode/ → modes/fhir-viewer/');
   return true;
 }
 

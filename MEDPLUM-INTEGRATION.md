@@ -25,20 +25,20 @@ cd ..
 yarn install
 ```
 
-The extension and its bundled `node-on-fhir` mode are injected at startup through
+The extension and its bundled `fhir-viewer` mode are injected at startup through
 the `EXTRA_EXTENSIONS` / `EXTRA_MODES` environment variables — no edits to
 `pluginConfig.json` are required. The Medplum admin app runs on `:3000` (OHIF's
 default), so start OHIF on **`:3200`** with `OHIF_PORT`:
 
 ```bash
-OHIF_PORT=3200 EXTRA_EXTENSIONS=@ohif/extension-nof-ohif-viewer EXTRA_MODES=node-on-fhir=extensions/ohif-fhir-viewer/mode yarn dev
+OHIF_PORT=3200 EXTRA_EXTENSIONS=@ohif/extension-nof-ohif-viewer EXTRA_MODES=fhir-viewer=extensions/ohif-fhir-viewer/mode yarn dev
 ```
 
-> **Note on the mode path:** the `node-on-fhir` mode ships nested inside the
+> **Note on the mode path:** the `fhir-viewer` mode ships nested inside the
 > extension at `extensions/ohif-fhir-viewer/mode`, so it isn't a top-level
 > workspace package. The `=<directory>` suffix points `EXTRA_MODES` straight at
-> it. (Alternatively, copy that folder to `modes/node-on-fhir` and use the bare
-> `EXTRA_MODES=node-on-fhir`.)
+> it. (Alternatively, copy that folder to `modes/fhir-viewer` and use the bare
+> `EXTRA_MODES=fhir-viewer`.)
 
 The viewer is now available at `http://localhost:3200/fhir-viewer`.
 

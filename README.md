@@ -16,7 +16,7 @@ yarn install
 yarn dev
 ```
 
-The setup script copies the companion mode into `modes/node-on-fhir/` and patches `platform/app/pluginConfig.json` with the required extension and mode entries. It is idempotent — safe to run multiple times.
+The setup script copies the companion mode into `modes/fhir-viewer/` and patches `platform/app/pluginConfig.json` with the required extension and mode entries. It is idempotent — safe to run multiple times.
 
 ## Features
 
@@ -76,7 +76,7 @@ The `.env` value takes priority over the config file. Restart the dev server aft
 
 ## Companion Mode
 
-The `node-on-fhir` mode (bundled in `mode/`) provides a standard OHIF layout configured for this extension. It:
+The `fhir-viewer` mode (bundled in `mode/`) provides a standard OHIF layout configured for this extension. It:
 
 - Registers the ECG viewport and SOP class handler alongside the default Cornerstone viewport
 - Adds the FHIR config panel to the right panel group
@@ -84,7 +84,7 @@ The `node-on-fhir` mode (bundled in `mode/`) provides a standard OHIF layout con
 - Sets up right-click context menus with DICOM export
 - Extends the default tool group with a Text annotation tool
 
-Route: `/node-on-fhir`
+Route: `/fhir-viewer`
 
 ## Dependencies
 

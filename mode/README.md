@@ -1,4 +1,4 @@
-# node-on-fhir
+# fhir-viewer
 
 > OHIF Mode — Lab #96: Watson mode with custom viewport actions
 
