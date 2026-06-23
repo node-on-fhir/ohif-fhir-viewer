@@ -11,8 +11,14 @@ Begin by installing the OHIF Viewer
 mkdir demo && cd demo
 
 # install OHIF and the NOF FHIR extension
-git clone https://github.com/OHIF/Viewers
-# link the workspace packages
+#git clone https://github.com/OHIF/Viewers
+
+git clone https://github.com/awatson1978/Viewers
+cd Viewers
+git checkout -b fhircast-mvd
+git pull origin fhircast-mvd
+
+# install dependencies and run the app
 brew install pnpm
 pnpm install
 pnpm dev
@@ -26,10 +32,13 @@ a genuine **build/dev-server** variable (read by the Node-based dev server), unl
 the FHIR client ID and server URL, which are runtime config:
 
 ```bash
-cd Viewers/extensions
+# install the extension
+cd extensions
 git clone https://github.com/node-on-fhir/ohif-fhir-viewer
 cd ..
 
+# install dependencies and run the app
+pnpm install
 EXTRA_EXTENSIONS=@ohif/extension-nof-ohif-viewer pnpm dev
 ```
 

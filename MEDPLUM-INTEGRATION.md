@@ -15,8 +15,14 @@ Begin by installing the OHIF Viewer
 mkdir demo && cd demo
 
 # install OHIF and the NOF FHIR extension
-git clone https://github.com/OHIF/Viewers
-# link the workspace packages
+#git clone https://github.com/OHIF/Viewers
+
+git clone https://github.com/awatson1978/Viewers
+cd Viewers
+git checkout -b fhircast-mvd
+git pull origin fhircast-mvd
+
+# install dependencies and run the app
 brew install pnpm
 pnpm install
 pnpm dev
@@ -30,7 +36,14 @@ The Medplum admin app runs on `:3000` (OHIF's default), so start OHIF on **`:320
 with `OHIF_PORT`:
 
 ```bash
-OHIF_PORT=3200 EXTRA_EXTENSIONS=@ohif/extension-nof-ohif-viewer pnpm dev
+# install the extension
+cd extensions
+git clone https://github.com/node-on-fhir/ohif-fhir-viewer
+cd ..
+
+# install dependencies and run the app
+pnpm install
+EXTRA_EXTENSIONS=@ohif/extension-nof-ohif-viewer pnpm dev
 ```
 
 > **Mode auto-detection:** when an `EXTRA_EXTENSIONS` package contains a `mode/`
