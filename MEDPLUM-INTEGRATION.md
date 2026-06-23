@@ -154,16 +154,18 @@ The fastest interop check skips the OAuth dance by injecting a token manually.
 
 ### B. Subscribe and publish
 
-1. Open the **FhirCast** panel. The hub URL auto-populates from the ISS origin as
-   `http://localhost:8103/api/hub` (called directly — no proxy).
-2. Enter a topic (any string), select `patient-open` / `imagingstudy-open`, click **Subscribe**.
+1. Open the **FhirCast** panel. The hub URL is auto-discovered (SMART token `hub.url` →
+   CapabilityStatement → probe) as `http://localhost:8103/fhircast/STU3`. The equivalent alias
+   `http://localhost:8103/api/hub` also works. All called directly — no proxy.
+2. Enter a topic (any string), select `Patient-open` / `ImagingStudy-open`, click **Subscribe**.
    Expect HTTP 202 and the WebSocket status to go **Open** (Medplum returns
-   `ws://localhost:8103/ws/fhircast-r4/<uuid>`, used directly).
-3. Publish a `Patient-open` event from a terminal:
+   `ws://localhost:8103/ws/fhircast/<uuid>` in `hub.channel.endpoint`, used directly).
+3. Publish a `Patient-open` event from a terminal. The canonical hub is `/fhircast/STU3`; the
+   `/api/hub` alias accepts the same request:
    ```bash
    TOKEN="<access-token>"
    TOPIC="<topic-from-panel>"
-   curl -s -X POST "http://localhost:8103/fhircast/hub/$TOPIC" \
+   curl -s -X POST "http://localhost:8103/fhircast/STU3/$TOPIC" \
      -H "Authorization: Bearer $TOKEN" \
      -H 'Content-Type: application/json' \
      -d '{
@@ -186,7 +188,7 @@ The fastest interop check skips the OAuth dance by injecting a token manually.
 |---|---|
 | `.well-known/fhircast-configuration` | JSON with `eventsSupported` |
 | Token injection | Persists after reload (same tab) |
-| Hub URL auto-populated | `http://localhost:8103/api/hub` |
+| Hub URL auto-discovered | `http://localhost:8103/fhircast/STU3` (alias: `/api/hub`) |
 | Subscription POST | HTTP 202 Accepted |
 | WebSocket | Opens successfully |
 | Event delivery | Appears in OHIF panel |

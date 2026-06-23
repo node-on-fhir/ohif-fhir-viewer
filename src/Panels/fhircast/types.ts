@@ -14,20 +14,23 @@ export const SubscriptionMode = {
   unsubscribe: 'unsubscribe',
 } as const;
 
+// Event names use the FHIRcast 3.0.0 / STU3 convention: the FHIR resource type is capitalized
+// (e.g. `Patient-open`, `ImagingStudy-open`), matching Medplum's eventsSupported list
+// (server: packages/server/src/fhircast/routes.ts). System events stay lowercase.
 export const EventType = {
-  PatientOpen: 'patient-open',
-  PatientClose: 'patient-close',
-  ImagingStudyOpen: 'imagingstudy-open',
-  ImagingStudyClose: 'imagingstudy-close',
-  EncounterOpen: 'encounter-open',
-  EncounterClose: 'encounter-close',
-  DiagnosticReportOpen: 'diagnosticreport-open',
-  DiagnosticReportClose: 'diagnosticreport-close',
-  PatientUpdate: 'patient-update',
-  ImagingStudyUpdate: 'imagingstudy-update',
-  EncounterUpdate: 'encounter-update',
-  DiagnosticReportUpdate: 'diagnosticreport-update',
-  DiagnosticReportSelect: 'diagnosticreport-select',
+  PatientOpen: 'Patient-open',
+  PatientClose: 'Patient-close',
+  ImagingStudyOpen: 'ImagingStudy-open',
+  ImagingStudyClose: 'ImagingStudy-close',
+  EncounterOpen: 'Encounter-open',
+  EncounterClose: 'Encounter-close',
+  DiagnosticReportOpen: 'DiagnosticReport-open',
+  DiagnosticReportClose: 'DiagnosticReport-close',
+  PatientUpdate: 'Patient-update',
+  ImagingStudyUpdate: 'ImagingStudy-update',
+  EncounterUpdate: 'Encounter-update',
+  DiagnosticReportUpdate: 'DiagnosticReport-update',
+  DiagnosticReportSelect: 'DiagnosticReport-select',
   SyncError: 'syncerror',
   LogoutUser: 'userlogout',
   HibernateUser: 'userhibernate',
