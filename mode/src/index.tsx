@@ -17,20 +17,20 @@ const cornerstone = {
 
 const awatson = {
   fhirPanel:
-    '@ohif/extension-nof-ohif-viewer.panelModule.fhirConfig',
+    '@ohif/fhir-viewer.panelModule.fhirConfig',
   fhirCastPanel:
-    '@ohif/extension-nof-ohif-viewer.panelModule.fhirCast',
+    '@ohif/fhir-viewer.panelModule.fhirCast',
   ecgSopClassHandler:
-    '@ohif/extension-nof-ohif-viewer.sopClassHandlerModule.ecg-dicom',
+    '@ohif/fhir-viewer.sopClassHandlerModule.ecg-dicom',
   ecgViewport:
-    '@ohif/extension-nof-ohif-viewer.viewportModule.ecg-dicom',
+    '@ohif/fhir-viewer.viewportModule.ecg-dicom',
 };
 
 const extensionDependencies = {
   '@ohif/extension-default': '^3.0.0',
   '@ohif/extension-cornerstone': '^3.0.0',
   '@ohif/extension-cornerstone-dicom-seg': '^3.0.0',
-  '@ohif/extension-nof-ohif-viewer': '^0.0.1',
+  '@ohif/fhir-viewer': '^0.0.1',
 };
 
 function modeFactory({ modeConfiguration }) {
@@ -52,7 +52,7 @@ function modeFactory({ modeConfiguration }) {
         extensionManager.addDataSource(
           {
             friendlyName: 'FHIR R4 Server',
-            namespace: '@ohif/extension-nof-ohif-viewer.dataSourcesModule.fhir',
+            namespace: '@ohif/fhir-viewer.dataSourcesModule.fhir',
             sourceName: 'fhir',
             configuration: {},
           },

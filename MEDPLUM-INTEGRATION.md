@@ -43,7 +43,7 @@ cd ..
 
 # install dependencies and run the app
 pnpm install
-EXTRA_EXTENSIONS=@ohif/extension-nof-ohif-viewer pnpm dev
+EXTRA_EXTENSIONS=@ohif/fhir-viewer pnpm dev
 ```
 
 > **Mode auto-detection:** when an `EXTRA_EXTENSIONS` package contains a `mode/`

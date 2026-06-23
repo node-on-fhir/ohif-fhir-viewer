@@ -1,4 +1,4 @@
-# @ohif/extension-nof-ohif-viewer
+# @ohif/fhir-viewer
 
 Consolidated OHIF viewer extension — custom viewport actions, ECG waveform rendering, FHIR data source, hanging protocols, DICOM ZIP export, and a minimal viewer layout.
 
