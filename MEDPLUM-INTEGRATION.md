@@ -11,7 +11,7 @@ endpoints directly — no dev proxy required.
 Begin by installing the OHIF Viewer
 
 ```bash
-# create a working directory
+# (terminal Z) create a working directory
 mkdir demo && cd demo
 
 # install OHIF and the NOF FHIR extension
@@ -19,31 +19,21 @@ mkdir demo && cd demo
 
 git clone https://github.com/awatson1978/Viewers
 cd Viewers
-git checkout -b fhircast-mvd
-git pull origin fhircast-mvd
+git fetch origin
+git checkout fhircast-mvd
 
-# install dependencies and run the app
-brew install pnpm
-pnpm install
-pnpm dev
-```
-
-
-The extension is injected at startup through the `EXTRA_EXTENSIONS` environment
-variable — no edits to `pluginConfig.json` are required. Its bundled `fhir-viewer`
-mode is **auto-detected** and registered alongside it (no `EXTRA_MODES` needed).
-The Medplum admin app runs on `:3000` (OHIF's default), so start OHIF on **`:3200`**
-with `OHIF_PORT`:
-
-```bash
 # install the extension
 cd extensions
 git clone https://github.com/node-on-fhir/ohif-fhir-viewer
 cd ..
 
 # install dependencies and run the app
+brew install pnpm
 pnpm install
-EXTRA_EXTENSIONS=@ohif/extension-nof-ohif-viewer pnpm dev
+pnpm dev
+
+# run with with the extension
+OHIF_PORT=3200 EXTRA_EXTENSIONS=@ohif/fhir-viewer pnpm dev
 ```
 
 > **Mode auto-detection:** when an `EXTRA_EXTENSIONS` package contains a `mode/`
@@ -66,13 +56,36 @@ for first-time clone/build steps.
 | PostgreSQL | `localhost:5432` | Docker container `postgres-1` |
 
 ```bash
-# Redis and Postgres
-cd medplum
-docker compose up -d
+# (terminal A) clone the repository
+# git clone https://github.com/medplum/medplum
+# cd medplum
+cd 
 
-# Medplum API server (FHIR R4 + FHIRcast hub) on :8103
+# (terminal A) clone the repository
+git clone https://github.com/awatson1978/medplum
+cd medplum
+git fetch origin
+git checkout fhircast-r4 
+npm install
+npm run build:fast
+
+# Redis and Postgres with Docker (Colima)
+brew install colima docker docker-compose
+colima start # docker runtime
+docker compose up     # with logs
+docker compose up -d  # without logs
+docker compose ps
+
+# (terminal B) Medplum API server (FHIR R4 + FHIRcast hub) on :8103
 cd packages/server
+npm install
 npm run dev
+
+# (terminal C) Medplum app
+cd packages/app
+npm install
+npm run dev
+
 ```
 
 The Medplum admin app runs on `http://localhost:3000` (start it per the Medplum
@@ -101,7 +114,17 @@ Supply that UUID to OHIF at **runtime** — there is no `SMART_CLIENT_ID` build 
 (OHIF is a static SPA). Use any of, most-specific wins:
 
 1. **URL** — `?client_id=<uuid>` appended to the launch (per-launch).
-2. **SMART Preferences panel** in OHIF — paste/register the client ID (per-user, saved to localStorage).
+
+2. **SMART Preferences panel** 
+```bash
+# Client ID
+<uuid>
+# FHIR Server URL
+http://http://localhost:8103/fhir/R4
+```
+SAVE
+
+in OHIF — paste/register the client ID (per-user, saved to localStorage).
 3. **`window.config`** — the `smartClientId` field in the data source `configuration` of the served `app-config.js` (per-deployment).
 
 ## 4. Order and Complete an Exam on a Patient
@@ -163,7 +186,7 @@ The fastest interop check skips the OAuth dance by injecting a token manually.
    ```bash
    TOKEN="<access-token>"
    TOPIC="<topic-from-panel>"
-   curl -s -X POST "http://localhost:8103/fhircast/hub/$TOPIC" \
+   curl -s -X POST "http://localhost:8103/api/hub/$TOPIC" \
      -H "Authorization: Bearer $TOKEN" \
      -H 'Content-Type: application/json' \
      -d '{

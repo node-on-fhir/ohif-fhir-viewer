@@ -15,31 +15,21 @@ mkdir demo && cd demo
 
 git clone https://github.com/awatson1978/Viewers
 cd Viewers
-git checkout -b fhircast-mvd
-git pull origin fhircast-mvd
+git fetch origin
+git checkout fhircast-mvd
 
-# install dependencies and run the app
-brew install pnpm
-pnpm install
-pnpm dev
-```
-
-The FHIRcast extension is injected at startup through the `EXTRA_EXTENSIONS`
-environment variable — no edits to `pluginConfig.json` are required. Its bundled
-`fhir-viewer` mode (at `extensions/ohif-fhir-viewer/mode`) is **auto-detected** and
-registered alongside it, so no `EXTRA_MODES` entry is needed. `EXTRA_EXTENSIONS` is
-a genuine **build/dev-server** variable (read by the Node-based dev server), unlike
-the FHIR client ID and server URL, which are runtime config:
-
-```bash
 # install the extension
 cd extensions
 git clone https://github.com/node-on-fhir/ohif-fhir-viewer
 cd ..
 
 # install dependencies and run the app
+brew install pnpm
 pnpm install
-EXTRA_EXTENSIONS=@ohif/extension-nof-ohif-viewer pnpm dev
+pnpm dev
+
+# run with the extension
+EXTRA_EXTENSIONS=@ohif/@ohif/fhir-viewer pnpm dev
 ```
 
 > **Mode auto-detection:** when an `EXTRA_EXTENSIONS` package contains a `mode/`
