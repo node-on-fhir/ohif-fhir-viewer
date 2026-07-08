@@ -49,9 +49,9 @@ Install Meteor 3.4, clone the Honeycomb starter, and run it:
 ```bash
 curl https://install.meteor.com?release=3.4 | sh
 
-git clone https://github.com/node-on-fhir/core nof
+git clone https://github.com/node-on-fhir/core
 
-cd nof
+cd core
 
 meteor npm install
 meteor run
@@ -60,50 +60,18 @@ open http://localhost:3000
 Ctrl+C
 ```
 
-### B. Add USCore, International Patient Summary, Synthea, and Admin Tools
-
-Re-run with extensions via the `EXTRA_WORKFLOWS` environment variable:
-
-```bash
-meteor npm install
-
-EXTRA_WORKFLOWS=@node-on-fhir/us-core,@node-on-fhir/international-patient-summary,@node-on-fhir/synthea,@node-on-fhir/admin-tools,@node-on-fhir/data-importer meteor run
-
-open http://localhost:3000
-Ctrl+C
-```
-
-### C. Add a Settings File and Port
-
-Same as above, but point Meteor at a settings file with `--settings` and `--port`:
-
-```bash
-meteor npm install
-
-EXTRA_WORKFLOWS=@node-on-fhir/us-core,@node-on-fhir/international-patient-summary,@node-on-fhir/synthea,@node-on-fhir/admin-tools,@node-on-fhir/data-importer  meteor run --settings settings/settings.nodeonfhir.localhost.json --port 3200
-
-open http://localhost:3200
-Ctrl+C
-```
-
-### D. Add the Radiology Workflow Package
+### B. Add the Radiology Workflow Packages, a Settings file, and run on Port 3100
 
 Clone the `radiology-workflow` package into a local `npmPackages/` directory, then run with the `EXTRA_WORKFLOWS` environment variable and the radiology-workflow settings file on port 3200:
 
 ```bash
-cd extensions
-git clone https://github.com/node-on-fhir/radiology-workflow
-cd ..
-
-meteor npm install
-
-EXTRA_WORKFLOWS=@node-on-fhir/us-core,@node-on-fhir/international-patient-summary,@node-on-fhir/synthea,@node-on-fhir/admin-tools,@node-on-fhir/data-importer,@node-on-fhir/radiology-workflow meteor run --settings npmPackages/radiology-workflow/settings/settings.ohif.json --extra-packages "clinical:us-core, clinical:international-patient-summary, clinical:synthea, clinical:admin-tools, clinical:data-importer" CORS=http://localhost:3000 --port 3200
+INITIALIZE_CONSENT_ENGINE=true CORS=localhost EXTRA_WORKFLOWS=@node-on-fhir/radiology-workflow,@node-on-fhir/fhircast-module,@node-on-fhir/record-lifecycle,@node-on-fhir/clinical:us-core,@node-on-fhir/admin-tools,@node-on-fhir/data-importer,@node-on-fhir/international-patient-summary meteor run --settings npmPackages/fhircast/settings/settings.fhircast.json --port 3100
 
 open http://localhost:3200
 Ctrl+C
 ```
 
-### E. Register an OAuth Client
+### C. Register an OAuth Client
 
 The OHIF viewer authenticates against Node on FHIR using SMART on FHIR (OAuth 2.0). You need to register a client so the RIS knows which app is requesting access.
 
