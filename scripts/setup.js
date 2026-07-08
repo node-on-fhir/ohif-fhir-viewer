@@ -13,7 +13,7 @@ const PLUGIN_CONFIG = path.join(VIEWERS_ROOT, 'platform', 'app', 'pluginConfig.j
 const WEBPACK_PWA = path.join(VIEWERS_ROOT, 'platform', 'app', '.webpack', 'webpack.pwa.js');
 
 const EXTENSION_ENTRY = {
-  packageName: '@ohif/extension-nof-ohif-viewer',
+  packageName: '@ohif/fhir-viewer',
   version: '0.0.1',
 };
 

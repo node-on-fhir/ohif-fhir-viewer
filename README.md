@@ -1,4 +1,4 @@
-# @ohif/extension-nof-ohif-viewer
+# @ohif/fhir-viewer
 
 Consolidated OHIF viewer extension — custom viewport actions, ECG waveform rendering, FHIR data source, hanging protocols, DICOM ZIP export, and a minimal viewer layout.
 
@@ -8,12 +8,26 @@ Consolidated OHIF viewer extension — custom viewport actions, ECG waveform ren
 ## Quick Start
 
 ```bash
-git clone https://github.com/OHIF/Viewers
-cd Viewers/extensions
-git clone https://github.com/awatson1978/ohif-viewer
-cd ohif-viewer && node scripts/setup.js && cd ../..
-yarn install
-yarn dev
+# install OHIF 
+#git clone https://github.com/OHIF/Viewers
+
+git clone https://github.com/awatson1978/Viewers
+cd Viewers
+git fetch origin
+git checkout fhircast-mvd
+
+# install the extension
+cd extensions
+git clone https://github.com/node-on-fhir/ohif-fhir-viewer
+cd ..
+
+# install dependencies and run the app
+brew install pnpm
+pnpm install
+pnpm dev
+
+# run with with the extension
+EXTRA_EXTENSIONS=@ohif/fhir-viewer pnpm dev
 ```
 
 The setup script copies the companion mode into `modes/fhir-viewer/` and patches `platform/app/pluginConfig.json` with the required extension and mode entries. It is idempotent — safe to run multiple times.

@@ -1,10 +1,10 @@
 {
-  "name": "@ohif/extension-nof-ohif-viewer",
+  "name": "@ohif/fhir-viewer",
   "version": "0.0.1",
   "description": "Consolidated OHIF viewer extension — custom actions, ECG, FHIR, hanging protocols, minimal viewer, DICOM export, and custom routes",
   "author": "Abigail Watson",
   "license": "MIT",
-  "main": "dist/umd/@ohif/extension-nof-ohif-viewer/index.umd.js",
+  "main": "dist/umd/@ohif/fhir-viewer/index.umd.js",
   "files": [
     "dist/**",
     "public/**",
@@ -28,10 +28,10 @@
     "start": "yarn run dev"
   },
   "peerDependencies": {
-    "@ohif/core": "^3.11.0-beta.55",
-    "@ohif/extension-default": "^3.11.0-beta.55",
-    "@ohif/extension-cornerstone": "^3.11.0-beta.55",
-    "@ohif/i18n": "^3.11.0-beta.55",
+    "@ohif/core": "workspace:*",
+    "@ohif/extension-default": "workspace:*",
+    "@ohif/extension-cornerstone": "workspace:*",
+    "@ohif/i18n": "workspace:*",
     "prop-types": "^15.6.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

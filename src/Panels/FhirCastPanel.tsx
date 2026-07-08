@@ -11,23 +11,39 @@ import { getFhirConfig, getImagingStudyStore } from '../FhirDataSource';
 function FhirCastPanel() {
   const config = getFhirConfig();
 
-  // Derive Hub URL and WebSocket URL from ISS origin
-  let initialHubUrl = DEFAULT_HUB_URL;
-  let initialWsUrl = DEFAULT_WS_URL;
-  if (config.iss) {
+  // Ordered hub-base candidates to probe when the SMART token didn't supply hub.url.
+  // Medplum mounts versioned hubs under /fhircast/STU3 (3.0.0) and /fhircast/STU2; Node on FHIR
+  // and the FHIRcast reference sandbox mount at the origin root or /api/hub.
+  const buildCandidates = (iss: string): string[] => {
     try {
-      const issUrl = new URL(config.iss);
-      console.log('[FhirCastPanel] Deriving FHIRcast URLs from ISS:', config.iss, 'port:', issUrl.port || '(default)');
-      initialHubUrl = `${issUrl.origin}/api/hub`;
-      const wsProtocol = issUrl.protocol === 'https:' ? 'wss:' : 'ws:';
-      initialWsUrl = `${wsProtocol}//${issUrl.host}/bind`;
-    } catch (e) {
-      // malformed ISS, keep defaults
+      const origin = new URL(iss).origin;
+      return [`${origin}/fhircast/STU3`, `${origin}/fhircast/STU2`, origin, `${origin}/api/hub`];
+    } catch {
+      return [];
     }
-  }
+  };
 
-  // Use PATIENT ID as Topic
-  const initialTopic = config.patientId || DEFAULT_TOPIC;
+  // Derive a default WebSocket URL from a resolved hub base. The hub returns the definitive
+  // endpoint in the subscribe response (hub.channel.endpoint), so this is only the displayed value.
+  const deriveWsUrl = (hub: string): string => {
+    try {
+      const u = new URL(hub, window.location.origin);
+      const wsProtocol = u.protocol === 'https:' ? 'wss:' : 'ws:';
+      const path = u.pathname.includes('/fhircast/') ? '/ws/fhircast' : '/bind';
+      return `${wsProtocol}//${u.host}${path}`;
+    } catch {
+      return DEFAULT_WS_URL;
+    }
+  };
+
+  // Best synchronous guess (refined asynchronously by discovery below): prefer the SMART token's
+  // hub.url, else the first probe candidate, else the static default.
+  const tokenHubUrl = config.hubUrl || '';
+  const initialHubUrl = tokenHubUrl || buildCandidates(config.iss)[0] || DEFAULT_HUB_URL;
+  const initialWsUrl = deriveWsUrl(initialHubUrl);
+
+  // Prefer the FHIRcast session topic from the SMART launch, else the patient id.
+  const initialTopic = config.hubTopic || config.patientId || DEFAULT_TOPIC;
 
   // Form state
   const [hubUrl, setHubUrl] = useState(initialHubUrl);
@@ -45,54 +61,99 @@ function FhirCastPanel() {
   const [imagingStudyStatus, setImagingStudyStatus] = useState<string>('unknown');
   const [imagingStudyId, setImagingStudyId] = useState<string>('');
 
-  // Auto-discover hub capabilities on mount
+  // Discover the FHIRcast hub on mount: SMART token hub.url → FHIR CapabilityStatement extension →
+  // probe versioned/legacy candidates by their .well-known document. First match wins and updates
+  // the hub/WS fields. Depends on iss + token hub.url (not hubUrl) to avoid a set-state loop.
   useEffect(() => {
-    // Try hub-relative path first (Medplum mounts it as a sub-route of the hub router),
-    // then fall back to origin-relative path (Node on FHIR serves it at the server root).
-    const hubWellKnown = `${hubUrl}/.well-known/fhircast-configuration`;
-    const originWellKnown = (() => {
-      try {
-        const u = new URL(hubUrl, window.location.origin);
-        return `${u.origin}/.well-known/fhircast-configuration`;
-      } catch {
-        return null;
-      }
-    })();
-
     let cancelled = false;
 
-    fetch(hubWellKnown)
-      .then(res => {
-        if (!res.ok) throw new Error(`${res.status}`);
-        return res.json();
-      })
-      .then(config => {
-        if (!cancelled) {
-          console.log('[FhirCast] Hub capabilities discovered:', config);
-        }
-      })
-      .catch(() => {
-        // Try origin-relative path as fallback
-        if (cancelled || !originWellKnown || originWellKnown === hubWellKnown) return;
-        fetch(originWellKnown)
-          .then(res => {
-            if (!res.ok) throw new Error(`${res.status}`);
-            return res.json();
-          })
-          .then(config => {
-            if (!cancelled) {
-              console.log('[FhirCast] Hub capabilities discovered (origin):', config);
-            }
-          })
-          .catch(err => {
-            if (!cancelled) {
-              console.warn('[FhirCast] Hub discovery failed (will use defaults):', err.message);
-            }
-          });
-      });
+    const fetchWellKnown = async (base: string) => {
+      const res = await fetch(`${base}/.well-known/fhircast-configuration`);
+      if (!res.ok) throw new Error(`${res.status}`);
+      return res.json();
+    };
 
+    // Read hub.url from the FHIR server's CapabilityStatement fhircast-configuration-extension.
+    const fetchCapabilityHubUrl = async (): Promise<string | null> => {
+      if (!config.iss) return null;
+      try {
+        const metadataUrl = new URL('metadata', config.iss).toString();
+        const res = await fetch(metadataUrl, { headers: { Accept: 'application/fhir+json' } });
+        if (!res.ok) return null;
+        const cap = await res.json();
+        for (const rest of Array.isArray(cap?.rest) ? cap.rest : []) {
+          for (const ext of rest?.extension || []) {
+            if (typeof ext?.url === 'string' && ext.url.includes('fhircast-configuration-extension')) {
+              for (const sub of ext.extension || []) {
+                if (sub?.url === 'hub.url' && sub?.valueUrl) {
+                  return sub.valueUrl as string;
+                }
+              }
+            }
+          }
+        }
+      } catch {
+        // ignore — fall back to probing
+      }
+      return null;
+    };
+
+    const applyHub = (base: string, caps: unknown, how: string) => {
+      if (cancelled) return;
+      console.log(`[FhirCast] Hub discovered (${how}):`, base, caps);
+      setHubUrl(base);
+      setWsUrl(deriveWsUrl(base));
+    };
+
+    const discover = async () => {
+      // 1. Token-provided hub.url — trust it even if a cross-origin probe is blocked.
+      if (tokenHubUrl) {
+        try {
+          const caps = await fetchWellKnown(tokenHubUrl);
+          applyHub(tokenHubUrl, caps, 'token hub.url');
+        } catch (err) {
+          if (!cancelled) {
+            console.warn('[FhirCast] token hub.url well-known check failed, using it anyway:', err);
+            setHubUrl(tokenHubUrl);
+            setWsUrl(deriveWsUrl(tokenHubUrl));
+          }
+        }
+        return;
+      }
+
+      // 2. CapabilityStatement extension.
+      const capHubUrl = await fetchCapabilityHubUrl();
+      if (capHubUrl) {
+        try {
+          const caps = await fetchWellKnown(capHubUrl);
+          applyHub(capHubUrl, caps, 'CapabilityStatement');
+          return;
+        } catch {
+          // fall through to probing
+        }
+      }
+
+      // 3. Probe candidates; first whose well-known returns 200 wins.
+      for (const candidate of buildCandidates(config.iss)) {
+        if (cancelled) return;
+        try {
+          const caps = await fetchWellKnown(candidate);
+          applyHub(candidate, caps, 'probe');
+          return;
+        } catch {
+          // try next candidate
+        }
+      }
+
+      if (!cancelled) {
+        console.warn('[FhirCast] Hub discovery failed; using default:', initialHubUrl);
+      }
+    };
+
+    discover();
     return () => { cancelled = true; };
-  }, [hubUrl]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.iss, tokenHubUrl]);
 
   // Read initial ImagingStudy status from the store on mount
   useEffect(() => {

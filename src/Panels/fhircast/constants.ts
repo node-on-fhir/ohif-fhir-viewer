@@ -1,7 +1,8 @@
 import { EventType } from './types';
 
 // Fallback hub/WebSocket URLs used only when no SMART `iss` is configured.
-// When a launch is present, FhirCastPanel derives these from the iss origin.
+// When a launch is present, FhirCastPanel discovers the hub from the SMART token's `hub.url`,
+// then the FHIR CapabilityStatement, then by probing /fhircast/STU3, /fhircast/STU2, root, /api/hub.
 // Absolute URLs (no proxy) — the FHIRcast hub must accept the OHIF origin.
 export const DEFAULT_HUB_URL = 'http://localhost:3200/api/hub';
 export const DEFAULT_WS_URL = 'ws://localhost:3200/bind';

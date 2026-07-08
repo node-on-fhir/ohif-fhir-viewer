@@ -1,4 +1,4 @@
-# CLAUDE.md — @ohif/extension-nof-ohif-viewer
+# CLAUDE.md — @ohif/fhir-viewer
 
 ## Project Overview
 
@@ -21,7 +21,7 @@ If the setup script doesn't work, do it by hand:
 
 1. Copy `extensions/ohif-viewer/mode/` → `modes/fhir-viewer/`
 2. Edit `platform/app/pluginConfig.json`:
-   - Add to `extensions` array: `{ "packageName": "@ohif/extension-nof-ohif-viewer", "version": "0.0.1" }`
+   - Add to `extensions` array: `{ "packageName": "@ohif/fhir-viewer", "version": "0.0.1" }`
    - Add to `modes` array: `{ "packageName": "fhir-viewer" }`
 3. Run `yarn install` from Viewers root
 
@@ -29,7 +29,7 @@ If the setup script doesn't work, do it by hand:
 
 | What | Value |
 |---|---|
-| Extension package name | `@ohif/extension-nof-ohif-viewer` |
+| Extension package name | `@ohif/fhir-viewer` |
 | Extension ID | read from `package.json` name field via `src/id.js` |
 | Mode package name | `fhir-viewer` |
 | Mode route | `/fhir-viewer` |

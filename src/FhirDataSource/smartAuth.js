@@ -6,7 +6,11 @@ const TOKEN_KEY = 'fhir_smart_token';
 // --- SMART Configuration Discovery ---
 
 export async function fetchSmartConfiguration(issUrl) {
-  const url = `${issUrl}/.well-known/smart-configuration`;
+  // Strip any trailing slash so a slash-terminated iss (e.g. http://host/fhir/R4/) doesn't produce
+  // a double slash. Medplum routes `/fhir/R4//.well-known/...` through the authenticated FHIR router
+  // (→ 401) instead of serving the public discovery document at `/fhir/R4/.well-known/...`.
+  const base = issUrl.replace(/\/+$/, '');
+  const url = `${base}/.well-known/smart-configuration`;
   const entry = {
     timestamp: new Date().toISOString(),
     method: 'GET',

@@ -44,6 +44,10 @@ let _config = {
   smartClientId: '',
   smartScope: '',
   smartAuthenticated: false,
+  // FHIRcast hub discovery — populated from the SMART token response (`hub.url`/`hub.topic`)
+  // when the granted scope includes `fhircast/`. Empty until a launch supplies them.
+  hubUrl: '',
+  hubTopic: '',
 };
 
 let _store = {
@@ -293,6 +297,12 @@ function createFhirApi(fhirConfig, servicesManager) {
           _config.fhirBaseUrl = authState.iss;
           _config.smartAuthenticated = true;
 
+          // FHIRcast launch parameters (SMART launch, per FHIRcast IG §2-1 Session Discovery).
+          // Present only when the granted scope includes `fhircast/`. These let the FHIRcast
+          // panel target the hub directly instead of guessing its URL.
+          _config.hubUrl = tokenResponse['hub.url'] || '';
+          _config.hubTopic = tokenResponse['hub.topic'] || '';
+
           try {
             const url = new URL(authState.iss);
             _config.fhirServerRoot = url.origin;
@@ -348,7 +358,11 @@ function createFhirApi(fhirConfig, servicesManager) {
           _store.studyInstanceUIDs = [PLACEHOLDER_STUDY_UID];
           return [PLACEHOLDER_STUDY_UID];
         }
-        const scope = _config.smartScope || 'launch openid fhirUser patient/*.read';
+        // FHIRcast scopes (`fhircast/...`) trigger the hub to return hub.url/hub.topic SMART launch
+        // params (Medplum: oauth/token.ts). The registered ClientApplication must permit these scopes.
+        const scope =
+          _config.smartScope ||
+          'launch openid fhirUser patient/*.read fhircast/Patient-open.read fhircast/ImagingStudy-open.read';
         const patientId = qGet('patient') || qGet('patientId') || _config.patientId;
 
         try {
@@ -414,6 +428,9 @@ function createFhirApi(fhirConfig, servicesManager) {
         if (cached) {
           _config.authToken = cached.access_token;
           _config.smartAuthenticated = true;
+          // Restore FHIRcast launch params captured at token exchange (saveToken preserves them).
+          _config.hubUrl = cached['hub.url'] || _config.hubUrl;
+          _config.hubTopic = cached['hub.topic'] || _config.hubTopic;
           console.log('[FHIR] Using cached OAuth token');
         }
       }
