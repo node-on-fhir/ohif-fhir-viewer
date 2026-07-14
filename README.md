@@ -8,29 +8,35 @@ Consolidated OHIF viewer extension — custom viewport actions, ECG waveform ren
 ## Quick Start
 
 ```bash
-# install OHIF 
-#git clone https://github.com/OHIF/Viewers
-
+# install OHIF
+# (until OHIF/Viewers#6143 merges, use the PR branch)
 git clone https://github.com/awatson1978/Viewers
 cd Viewers
 git fetch origin
-git checkout fhircast-mvd
+git checkout cli-tool
 
 # install the extension
-cd extensions
-git clone https://github.com/node-on-fhir/ohif-fhir-viewer
-cd ..
+cd extensions && git clone https://github.com/node-on-fhir/ohif-fhir-viewer && cd ..
 
-# install dependencies and run the app
+# install dependencies
 brew install pnpm
 pnpm install
-pnpm dev
-
-# run with with the extension
-EXTRA_EXTENSIONS=@ohif/fhir-viewer pnpm dev
 ```
 
-The setup script copies the companion mode into `modes/fhir-viewer/` and patches `platform/app/pluginConfig.json` with the required extension and mode entries. It is idempotent — safe to run multiple times.
+Then run the viewer with the extension, using either installation style:
+
+```bash
+# 12-factor / env-var (no tracked-file changes)
+EXTRA_EXTENSIONS=@ohif/fhir-viewer pnpm dev
+
+# or classic CLI registration, then a plain dev run
+pnpm run cli link-extension extensions/ohif-fhir-viewer
+pnpm dev
+```
+
+In both cases the extension **and** its bundled `fhir-viewer` mode load — the build auto-detects the companion mode in `mode/`, so no separate mode registration is needed. Visit `http://localhost:3000/fhir-viewer` to open the mode.
+
+Note: `link-extension` writes an entry into the tracked `platform/app/pluginConfig.json` — fine for local development, but don't commit it (CI clones of Viewers don't contain this extension). The env-var style leaves the working tree untouched. See [docs/INSTALL-COMPARISON.md](docs/INSTALL-COMPARISON.md) for a full comparison of the installation patterns.
 
 ## Features
 
