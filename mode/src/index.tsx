@@ -1,5 +1,5 @@
 import { hotkeys } from '@ohif/core';
-import { initToolGroups, toolbarButtons } from '@ohif/mode-longitudinal';
+import { initToolGroups } from '@ohif/mode-longitudinal';
 import { id } from './id';
 import pushCustomToolsToDefaultToolGroup from './pushCustomToolsToDefaultToolGroup';
 
@@ -66,10 +66,15 @@ function modeFactory({ modeConfiguration }) {
 
       measurementService.clearMeasurements();
 
-      initToolGroups(extensionManager, toolGroupService, commandsManager);
+      initToolGroups({ extensionManager, toolGroupService, commandsManager });
       pushCustomToolsToDefaultToolGroup(extensionManager, toolGroupService, commandsManager);
 
-      toolbarService.register([...toolbarButtons]);
+      // Since OHIF PR #5435 the standard toolbar buttons are published as a
+      // customization ('cornerstone.toolbarButtons') instead of an export of
+      // @ohif/mode-longitudinal.
+      const standardToolbarButtons =
+        customizationService.getCustomization('cornerstone.toolbarButtons') ?? [];
+      toolbarService.register([...standardToolbarButtons]);
 
       customizationService.setCustomizations({
         cornerstoneViewportClickCommands: {
