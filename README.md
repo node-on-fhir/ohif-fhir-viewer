@@ -7,36 +7,47 @@ Consolidated OHIF viewer extension — custom viewport actions, ECG waveform ren
 
 ## Quick Start
 
+Clone the extension and OHIF **side by side**, install each, then link with the OHIF CLI:
+
 ```bash
-# install OHIF
-# (until OHIF/Viewers#6143 merges, use the PR branch)
-git clone https://github.com/awatson1978/Viewers
+# the extension — install its own dependencies
+git clone https://github.com/node-on-fhir/ohif-fhir-viewer
+cd ohif-fhir-viewer
+pnpm install --config.auto-install-peers=false
+cd ..
+
+# OHIF
+git clone https://github.com/OHIF/Viewers
 cd Viewers
-git fetch origin
-git checkout cli-tool
-
-# install the extension
-cd extensions && git clone https://github.com/node-on-fhir/ohif-fhir-viewer && cd ..
-
-# install dependencies
-brew install pnpm
+brew install pnpm   # if you don't already have pnpm
 pnpm install
-```
 
-Then run the viewer with the extension, using either installation style:
-
-```bash
-# 12-factor / env-var (no tracked-file changes)
-EXTRA_EXTENSIONS=@ohif/fhir-viewer pnpm dev
-
-# or classic CLI registration, then a plain dev run
-pnpm run cli link-extension extensions/ohif-fhir-viewer
+# link the extension and its companion mode, then run
+pnpm run cli link-extension ../ohif-fhir-viewer
+pnpm run cli link-mode ../ohif-fhir-viewer/mode
 pnpm dev
 ```
 
-In both cases the extension **and** its bundled `fhir-viewer` mode load — the build auto-detects the companion mode in `mode/`, so no separate mode registration is needed. Visit `http://localhost:3000/fhir-viewer` to open the mode.
+Open `http://localhost:3000/fhir-viewer`.
 
-Note: `link-extension` writes an entry into the tracked `platform/app/pluginConfig.json` — fine for local development, but don't commit it (CI clones of Viewers don't contain this extension). The env-var style leaves the working tree untouched. See [docs/INSTALL-COMPARISON.md](docs/INSTALL-COMPARISON.md) for a full comparison of the installation patterns.
+Notes:
+
+- `--config.auto-install-peers=false` matters: the extension's `peerDependencies` (e.g. `@ohif/core`) resolve from the OHIF build at bundle time and must not be installed into the extension's own `node_modules`.
+- The `link-*` commands write entries into OHIF's tracked `platform/app/pluginConfig.json` — fine for local development, but don't commit them (clones of Viewers don't contain this extension). `unlink-extension` / `unlink-mode` undo them.
+
+### Alternative: env-var injection (requires [OHIF/Viewers#6143](https://github.com/OHIF/Viewers/pull/6143))
+
+With that PR's branch, a single environment variable replaces both `link-*` commands and leaves the Viewers working tree untouched — the bundled `fhir-viewer` mode is auto-detected:
+
+```bash
+# out-of-tree checkout (use an absolute path for the directory override)
+EXTRA_EXTENSIONS="@ohif/fhir-viewer=$PWD/../ohif-fhir-viewer" pnpm dev
+
+# or, if the extension is cloned inside extensions/, the name alone suffices
+EXTRA_EXTENSIONS=@ohif/fhir-viewer pnpm dev
+```
+
+See [docs/INSTALL-COMPARISON.md](docs/INSTALL-COMPARISON.md) for a full comparison of the installation patterns.
 
 ## Features
 
