@@ -12,7 +12,7 @@ function getPanelModule({ servicesManager, commandsManager }) {
     },
     {
       name: 'fhirCast',
-      iconName: 'tab-linear',
+      iconName: 'fhir-flame',
       iconLabel: 'FHIRCast',
       label: 'FHIRCast',
       component: FhirCastPanel,

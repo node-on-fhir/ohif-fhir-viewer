@@ -1,5 +1,7 @@
 import React from 'react';
+import { Icons } from '@ohif/ui-next';
 import { id } from './id.js';
+import Flame from './icons/Flame';
 import commandsModule from './commandsModule';
 import getCustomizationModule from './getCustomizationModule';
 import getSopClassHandlerModule from './getSopClassHandlerModule';
@@ -27,6 +29,7 @@ export default {
   id,
 
   preRegistration({ servicesManager }) {
+    Icons.addIcon('fhir-flame', Flame);
     initTools();
     registerHangingProtocolAttributes({ servicesManager });
   },
