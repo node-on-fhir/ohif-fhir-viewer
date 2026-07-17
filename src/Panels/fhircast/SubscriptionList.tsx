@@ -8,7 +8,7 @@ interface SubscriptionListProps {
 
 function EventChip({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center rounded-full border border-blue-500/30 bg-blue-500/20 px-2 py-0.5 text-xs text-blue-400">
+    <span className="fhircast-chip">
       {label}
     </span>
   );
@@ -60,7 +60,7 @@ export default function SubscriptionList({
               </td>
               <td className="px-2 py-1.5">
                 {sub.status === 'active' && (
-                  <span className="inline-block h-2 w-2 rounded-full bg-green-400" title="Active" />
+                  <span className="fhircast-dot--open inline-block h-2 w-2 rounded-full" title="Active" />
                 )}
               </td>
               <td className="px-2 py-1.5">

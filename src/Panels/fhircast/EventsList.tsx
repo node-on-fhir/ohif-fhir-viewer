@@ -46,7 +46,7 @@ function EventItem({ evt }: { evt: ReceivedEvent }) {
         </div>
         <div className="flex shrink-0 items-center gap-1">
           {eventType !== 'unknown' && (
-            <span className="inline-flex items-center rounded-full border border-blue-500/30 bg-blue-500/20 px-2 py-0.5 text-xs text-blue-400">
+            <span className="fhircast-chip">
               {eventType}
             </span>
           )}

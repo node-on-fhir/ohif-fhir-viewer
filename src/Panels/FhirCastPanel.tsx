@@ -6,6 +6,7 @@ import EventsList from './fhircast/EventsList';
 import { DEFAULT_HUB_URL, DEFAULT_WS_URL, DEFAULT_TOPIC, DEFAULT_SELECTED_EVENTS } from './fhircast/constants';
 import type { Subscription } from './fhircast/types';
 import { useFhircastSubscription } from './fhircast/useFhircastSubscription';
+import './fhircast/fhircast.css';
 import { getFhirConfig, getImagingStudyStore } from '../FhirDataSource';
 
 function FhirCastPanel() {
@@ -236,14 +237,14 @@ function FhirCastPanel() {
             <div className="text-muted-foreground text-xs">Status</div>
             <div>
               <span
-                className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
+                className={`fhircast-status-badge ${
                   imagingStudyStatus === 'available' || imagingStudyStatus === 'reported'
-                    ? 'bg-green-600/20 text-green-400'
+                    ? 'fhircast-status-badge--good'
                     : imagingStudyStatus === 'registered' || imagingStudyStatus === 'unread'
-                      ? 'bg-yellow-600/20 text-yellow-400'
+                      ? 'fhircast-status-badge--pending'
                       : imagingStudyStatus === 'unknown'
-                        ? 'bg-white/10 text-white/50'
-                        : 'bg-blue-600/20 text-blue-400'
+                        ? 'fhircast-status-badge--unknown'
+                        : 'fhircast-status-badge--other'
                 }`}
               >
                 {imagingStudyStatus}

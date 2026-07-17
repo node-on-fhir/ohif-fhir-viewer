@@ -4,6 +4,7 @@ import { Button, Input, Label, PanelSection } from '@ohif/ui-next';
 import { updateFhirConfig, getFhirConfig } from '../FhirDataSource';
 import { subscribeToQueryLog, clearQueryLog, fetchImagingStudies, fetchImagingStudyById, fetchDocumentReferences, fetchDicomFile } from '../FhirDataSource/fhirClient';
 import { getStoredToken, clearToken, clearAuthState } from '../FhirDataSource/smartAuth';
+import './fhircast/fhircast.css';
 
 function FhirConfigPanel() {
   const { servicesManager, commandsManager, extensionManager } = useSystem();
@@ -231,8 +232,8 @@ function FhirConfigPanel() {
           <PanelSection.Header>SMART Auth</PanelSection.Header>
           <PanelSection.Content className="bg-muted space-y-2 px-4 pt-2 pb-4">
             <div className="flex items-center space-x-2">
-              <span className="inline-block h-2 w-2 rounded-full bg-green-400" />
-              <span className="text-xs text-green-400 font-medium">Authenticated</span>
+              <span className="fhircast-dot--open inline-block h-2 w-2 rounded-full" />
+              <span className="fhircast-text-success text-xs font-medium">Authenticated</span>
             </div>
 
             {storedToken?.scope && (

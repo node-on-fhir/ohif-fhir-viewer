@@ -34,7 +34,7 @@ interface SubscribeFormProps {
 
 function EventChip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/20 px-2 py-0.5 text-xs text-blue-400">
+    <span className="fhircast-chip gap-1">
       {label}
       <button
         onClick={onRemove}
@@ -50,10 +50,10 @@ function EventChip({ label, onRemove }: { label: string; onRemove: () => void })
 function WsStatusDot({ status }: { status: WebSocketStatusValue }) {
   const colorClass =
     status === 'Open'
-      ? 'bg-green-400'
+      ? 'fhircast-dot--open'
       : status === 'Opening'
-        ? 'bg-yellow-400'
-        : 'bg-red-400';
+        ? 'fhircast-dot--opening'
+        : 'fhircast-dot--closed';
 
   return (
     <span
