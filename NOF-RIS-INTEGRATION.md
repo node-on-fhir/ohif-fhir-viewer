@@ -91,7 +91,7 @@ Alternatively, POST the equivalent JSON to the `/oauth/register` endpoint:
 ```json
 {
   "client_name": "OHIF FHIR Viewer",
-  "redirect_uris": ["http://localhost:3200/fhir-viewer"],
+  "redirect_uris": ["http://localhost:3000/fhir-viewer"],
   "scope": "launch openid fhirUser patient/*.read",
   "grant_types": ["authorization_code"],
   "response_types": ["code"],
