@@ -54,9 +54,9 @@ git clone https://github.com/node-on-fhir/core
 cd core
 
 meteor npm install
-meteor run
+meteor run --port 3100
 
-open http://localhost:3000
+open http://localhost:3100
 Ctrl+C
 ```
 
@@ -67,7 +67,7 @@ Clone the `radiology-workflow` package into a local `npmPackages/` directory, th
 ```bash
 INITIALIZE_CONSENT_ENGINE=true CORS=localhost EXTRA_WORKFLOWS=@node-on-fhir/radiology-workflow,@node-on-fhir/fhircast-module,@node-on-fhir/record-lifecycle,@node-on-fhir/clinical:us-core,@node-on-fhir/admin-tools,@node-on-fhir/data-importer,@node-on-fhir/international-patient-summary meteor run --settings npmPackages/fhircast/settings/settings.fhircast.json --port 3100
 
-open http://localhost:3200
+open http://localhost:3100
 Ctrl+C
 ```
 
