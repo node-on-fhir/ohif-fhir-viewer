@@ -7,29 +7,25 @@ Step-by-step guide for setting up a Node on FHIR instance as the backend RIS for
 Begin by installing the OHIF Viewer
 
 ```bash
-# create a working directory
-mkdir demo && cd demo
-
-# install OHIF and the NOF FHIR extension
-#git clone https://github.com/OHIF/Viewers
-
-git clone https://github.com/awatson1978/Viewers
-cd Viewers
-git fetch origin
-git checkout fhircast-mvd
-
-# install the extension
-cd extensions
+# the extension — install its own dependencies
 git clone https://github.com/node-on-fhir/ohif-fhir-viewer
+cd ohif-fhir-viewer
+pnpm install --config.auto-install-peers=false
 cd ..
 
-# install dependencies and run the app
-brew install pnpm
+# OHIF
+git clone https://github.com/OHIF/Viewers
+cd Viewers
+brew install pnpm   # if you don't already have pnpm
 pnpm install
+
+# link the extension and its companion mode, then run
+pnpm run cli link-extension ../ohif-fhir-viewer
+pnpm run cli link-mode ../ohif-fhir-viewer/mode
 pnpm dev
 
-# run with the extension
-EXTRA_EXTENSIONS=@ohif/@ohif/fhir-viewer pnpm dev
+# new terminal
+open http://localhost:3000/fhir-viewer
 ```
 
 > **Mode auto-detection:** when an `EXTRA_EXTENSIONS` package contains a `mode/`
@@ -47,9 +43,11 @@ OHIF starts on `http://localhost:3000` by default (override with `OHIF_PORT`).
 Install Meteor 3.4, clone the Honeycomb starter, and run it:
 
 ```bash
+cd ..
 curl https://install.meteor.com?release=3.4 | sh
 
 git clone https://github.com/node-on-fhir/core
+git submodule update --init libraries/dcmjs
 
 cd core
 
