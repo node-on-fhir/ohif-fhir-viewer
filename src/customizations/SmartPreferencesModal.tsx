@@ -15,10 +15,12 @@ import {
 import { useTranslation } from 'react-i18next';
 import i18n from '@ohif/i18n';
 import { getFhirConfig, updateFhirConfig, registerSmartClient } from '../FhirDataSource';
+import './smartPreferences.css';
 
 const { availableLanguages, defaultLanguage, currentLanguage: currentLanguageFn } = i18n;
 
 const SMART_STORAGE_KEY = 'fhir_smart_config';
+const DEFAULT_FHIR_BASE_URL = 'http://localhost:3100/baseR4';
 
 interface HotkeyDefinition {
   keys: string;
@@ -43,6 +45,18 @@ function loadSmartConfig() {
 
 function saveSmartConfig(config: Record<string, string>) {
   localStorage.setItem(SMART_STORAGE_KEY, JSON.stringify(config));
+}
+
+function AutogenChip({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="smart-autogen-chip"
+    >
+      Autogenerate
+    </button>
+  );
 }
 
 function SmartPreferencesModal({ hide }: { hide: () => void }) {
@@ -277,12 +291,18 @@ function SmartPreferencesModal({ hide }: { hide: () => void }) {
               <Label htmlFor="smart-client-id" className="text-sm">
                 Client ID
               </Label>
-              <Input
-                id="smart-client-id"
-                value={state.smartClientId}
-                onChange={e => setState(s => ({ ...s, smartClientId: e.target.value }))}
-                placeholder="e.g. kvGGaJjJyBjKRiNXw"
-              />
+              <div className="smart-autogen-wrap">
+                <Input
+                  id="smart-client-id"
+                  value={state.smartClientId}
+                  onChange={e => setState(s => ({ ...s, smartClientId: e.target.value }))}
+                  placeholder="e.g. kvGGaJjJyBjKRiNXw"
+                  className="smart-autogen-input"
+                />
+                <AutogenChip
+                  onClick={() => setState(s => ({ ...s, smartClientId: crypto.randomUUID() }))}
+                />
+              </div>
               {!state.smartClientId && (
                 <p className="text-muted-foreground text-xs">
                   No client ID configured. Use Register to obtain one.
@@ -315,12 +335,18 @@ function SmartPreferencesModal({ hide }: { hide: () => void }) {
               <Label htmlFor="smart-fhir-url" className="text-sm">
                 FHIR Server URL
               </Label>
-              <Input
-                id="smart-fhir-url"
-                value={state.fhirBaseUrl}
-                onChange={e => setState(s => ({ ...s, fhirBaseUrl: e.target.value }))}
-                placeholder="http://localhost:3100/baseR4"
-              />
+              <div className="smart-autogen-wrap">
+                <Input
+                  id="smart-fhir-url"
+                  value={state.fhirBaseUrl}
+                  onChange={e => setState(s => ({ ...s, fhirBaseUrl: e.target.value }))}
+                  placeholder={DEFAULT_FHIR_BASE_URL}
+                  className="smart-autogen-input"
+                />
+                <AutogenChip
+                  onClick={() => setState(s => ({ ...s, fhirBaseUrl: DEFAULT_FHIR_BASE_URL }))}
+                />
+              </div>
             </div>
             <div className="flex items-end">
               <Button
