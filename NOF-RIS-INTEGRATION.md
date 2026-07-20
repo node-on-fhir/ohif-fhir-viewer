@@ -90,20 +90,21 @@ You should see the authentication guard, the sign-up page, and then the main wor
 
 ### C. Register an OAuth Client
 
-The OHIF viewer authenticates against Node on FHIR using SMART on FHIR (OAuth 2.0). You need to register a client so the RIS knows which app is requesting access.
+The OHIF viewer authenticates against Node on FHIR using SMART on FHIR (OAuth 2.0). You need to register a client so the RIS knows which app is requesting access.  
 
-Navigate to `http://localhost:3200/oauth-clients` and click **"+ New Client"**. Fill in the following fields:
 
-| Field | Value |
-|---|---|
-| **Client Name** | `OHIF FHIR Viewer` |
-| **Redirect URIs** | `http://localhost:3200/fhir-viewer` |
-| **Scopes** | `launch openid fhirUser patient/*.read` |
-| **Grant Types** | `authorization_code` |
-| **Response Types** | `code` |
-| **Token Endpoint Auth Method** | `client_secret_basic` |
+#### C1.  OHIF FHIR Viewer registration via User Preferences
 
-Alternatively, POST the equivalent JSON to the `/oauth/register` endpoint:
+The OHIF FHIR Viewer has configuration controls in the Settings > User Preferences panel, which can be used to register OHIF with the FHIR Server.  Just click the (autogenerate) buttons, or fill out the fields with your preferred values.
+
+```
+open http://localhost:3000/fhir-viewer
+```
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-19 at 11 07 17 PM" src="https://github.com/user-attachments/assets/04afb0b2-e508-458d-8cf4-6f581b89147b" />
+
+#### C2.  POST to the /oauth/register endpoint
+A second approach to registering the oauth client is to POST a JSON object with the following shape to the `http://localhost:3100/oauth/register` endpoint:
 
 ```json
 {
@@ -116,16 +117,27 @@ Alternatively, POST the equivalent JSON to the `/oauth/register` endpoint:
 }
 ```
 
-After registration, copy the generated `client_id`. OHIF reads it at **runtime** from one of three browser-native surfaces, in most-specific-wins order:
+
+#### C3.  Register a New Client in the RIS User Interface
+A third approach, is you may also navigate to `http://localhost:3100/oauth-clients` and click **"+ New Client"**. Fill in the following fields:
+
+| Field | Value |
+|---|---|
+| **Client Name** | `OHIF FHIR Viewer` |
+| **Redirect URIs** | `http://localhost:3200/fhir-viewer` |
+| **Scopes** | `launch openid fhirUser patient/*.read` |
+| **Grant Types** | `authorization_code` |
+| **Response Types** | `code` |
+| **Token Endpoint Auth Method** | `client_secret_basic` |
+
+#### Additional Notes on Registering the OAuth Client
+
+OHIF FHIR Viewer extensions read the client_id at **runtime** from one of the following three browser-native surfaces, in most-specific-wins order.  For SMART Launch contexts, the RIS will provide the client_id when it opens OHIF.  For stand-alone launch workflows, you will want to add the FHIR Server URL and client ID to the User Preferences and store locally.  
 
 1. **URL** — `?client_id=…` on the SMART launch (per-launch; lets one deployment face multiple registrations).
 2. **SMART Preferences panel** — entered/registered in OHIF, saved to `localStorage` (per-user).
 3. **`window.config`** — the `smartClientId` field in the data source `configuration` of the served `app-config.js` (per-deployment).
 
-There is **no build-time environment variable** — OHIF is a static SPA, so the client ID must arrive at runtime through one of the above. (For containerized deployments, the `app-config.js` value can be templated from an env var at container startup via the OHIF Docker entrypoint; pure-static hosts edit the served config or use the Preferences panel.)
 
-## 3.  Register the Viewer as a Client
 
-Open the viewer, register it as a SMART client from the Preferences page if you haven't already, then complete the SMART launch from the RIS reading worklist. With CORS in place, FHIR requests go straight to `:3200` (verify in DevTools → Network: absolute origin, **no `/fhir-proxy`**).
-
-## 4.  Order and Complete an Exam on a Patient
+## 3.  Order and Complete an Exam on a Patient
