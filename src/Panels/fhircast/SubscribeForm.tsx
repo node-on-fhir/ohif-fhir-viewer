@@ -30,6 +30,7 @@ interface SubscribeFormProps {
   hasSubscriptions: boolean;
   onSubscribe: () => void;
   onUnsubscribe: () => void;
+  subscribeError?: string;
 }
 
 function EventChip({ label, onRemove }: { label: string; onRemove: () => void }) {
@@ -80,6 +81,7 @@ export default function SubscribeForm({
   hasSubscriptions,
   onSubscribe,
   onUnsubscribe,
+  subscribeError,
 }: SubscribeFormProps) {
   const availableEvents = EVENT_OPTIONS.filter(
     (opt) => !selectedEvents.includes(opt.value)
@@ -207,6 +209,10 @@ export default function SubscribeForm({
           Unsubscribe
         </Button>
       </div>
+
+      {subscribeError && (
+        <p className="text-xs text-red-400">{subscribeError}</p>
+      )}
     </div>
   );
 }

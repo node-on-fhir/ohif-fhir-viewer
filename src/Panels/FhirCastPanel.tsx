@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSystem } from '@ohif/core';
 import { PanelSection } from '@ohif/ui-next';
 import SubscribeForm from './fhircast/SubscribeForm';
 import SubscriptionList from './fhircast/SubscriptionList';
@@ -11,14 +12,17 @@ import { getFhirConfig, getImagingStudyStore } from '../FhirDataSource';
 
 function FhirCastPanel() {
   const config = getFhirConfig();
+  const { servicesManager } = useSystem();
+  const { uiNotificationService } = servicesManager?.services || {};
 
   // Ordered hub-base candidates to probe when the SMART token didn't supply hub.url.
-  // Medplum mounts versioned hubs under /fhircast/STU3 (3.0.0) and /fhircast/STU2; Node on FHIR
-  // and the FHIRcast reference sandbox mount at the origin root or /api/hub.
+  // /api/hub first (Node on FHIR and the FHIRcast reference sandbox — also the fallback default
+  // when discovery fails); Medplum mounts versioned hubs under /fhircast/STU3 (3.0.0) and
+  // /fhircast/STU2; some hubs mount at the origin root.
   const buildCandidates = (iss: string): string[] => {
     try {
       const origin = new URL(iss).origin;
-      return [`${origin}/fhircast/STU3`, `${origin}/fhircast/STU2`, origin, `${origin}/api/hub`];
+      return [`${origin}/api/hub`, `${origin}/fhircast/STU3`, `${origin}/fhircast/STU2`, origin];
     } catch {
       return [];
     }
@@ -189,8 +193,34 @@ function FhirCastPanel() {
   }, [receivedEvents]);
 
   const hasSubscriptions = Object.keys(subscriptions).length > 0;
+  const [subscribeError, setSubscribeError] = useState('');
+
+  // Translate raw fetch/HTTP errors into something actionable for the panel.
+  const describeSubscribeError = (err: unknown): string => {
+    const message = err instanceof Error ? err.message : String(err);
+    if (/\b(404|405)\b/.test(message)) {
+      return `No FHIRcast hub answered at ${hubUrl}. Check the Hub URL — NodeOnFHIR hubs listen at /api/hub.`;
+    }
+    if (err instanceof TypeError && /failed to fetch|networkerror|load failed/i.test(message)) {
+      return `Could not reach ${hubUrl} from ${window.location.origin}. The hub may be down or blocking this origin via CORS.`;
+    }
+    return message;
+  };
+
+  const showSubscribeError = (err: unknown, action: string) => {
+    console.error(`[FhirCastPanel] ${action} failed:`, err);
+    const message = describeSubscribeError(err);
+    setSubscribeError(message);
+    uiNotificationService?.show({
+      title: `FHIRcast ${action} Failed`,
+      message,
+      type: 'error',
+      duration: 10000,
+    });
+  };
 
   const handleSubscribe = async () => {
+    setSubscribeError('');
     try {
       await subscribe({ hubUrl, wsUrl, topic, events: selectedEvents, authToken: config.authToken || undefined });
       setSubscriptions((prev) => ({
@@ -198,12 +228,17 @@ function FhirCastPanel() {
         [topic]: { topic, events: [...selectedEvents], status: 'active' },
       }));
     } catch (err) {
-      console.error('[FhirCastPanel] Subscribe failed:', err);
+      showSubscribeError(err, 'Subscribe');
     }
   };
 
-  const handleUnsubscribe = () => {
-    unsubscribe();
+  const handleUnsubscribe = async () => {
+    setSubscribeError('');
+    try {
+      await unsubscribe();
+    } catch (err) {
+      showSubscribeError(err, 'Unsubscribe');
+    }
     setSubscriptions((prev) => {
       const next = { ...prev };
       delete next[topic];
@@ -274,6 +309,7 @@ function FhirCastPanel() {
             hasSubscriptions={hasSubscriptions}
             onSubscribe={handleSubscribe}
             onUnsubscribe={handleUnsubscribe}
+            subscribeError={subscribeError}
           />
         </PanelSection.Content>
       </PanelSection>
