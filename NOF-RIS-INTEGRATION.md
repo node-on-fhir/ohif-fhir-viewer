@@ -200,7 +200,9 @@ You can find a sample .DCM file in the NodeOnFHIR core distribution at `npmPacka
 
 ## 6.  Launch the Imaging Study in OHIF FHIR Viewer
 
-<img width="2560" height="1440" alt="Screenshot 2026-07-20 at 9 08 27 AM" src="https://github.com/user-attachments/assets/f9252432-1c6c-4402-90ff-11d75972a7e8" />
+<img width="2560" height="1440" alt="Screenshot 2026-07-20 at 9 13 13 AM" src="https://github.com/user-attachments/assets/b96ee8a2-f887-4508-9352-a70e0e6a92c9" />
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-20 at 9 13 26 AM" src="https://github.com/user-attachments/assets/bd28cbe7-76f9-4ee2-ab1c-36d04f4b4825" />
 
 
 
