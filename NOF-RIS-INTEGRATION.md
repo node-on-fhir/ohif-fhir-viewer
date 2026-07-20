@@ -28,11 +28,6 @@ pnpm dev
 open http://localhost:3000/fhir-viewer
 ```
 
-> **Mode auto-detection:** when an `EXTRA_EXTENSIONS` package contains a `mode/`
-> subdirectory with a `package.json`, that mode is registered automatically. To
-> override or add other modes explicitly, use `EXTRA_MODES` (a comma-separated list
-> of `<name>` or `<name>=<directory>` entries).
-
 OHIF starts on `http://localhost:3000/fhir-viewer` by default (override with `OHIF_PORT`), which should appear with an empty viewport.  
 
 <img width="2560" height="1440" alt="Screenshot 2026-07-19 at 1 29 00 PM" src="https://github.com/user-attachments/assets/6991dfab-74d3-418e-8644-44eab98b4e60" />
@@ -49,10 +44,9 @@ cd ..
 curl https://install.meteor.com?release=3.4 | sh
 
 git clone https://github.com/node-on-fhir/core
-git submodule update --init libraries/dcmjs
-
 cd core
 
+git submodule update --init libraries/dcmjs
 meteor npm install
 meteor run --port 3100
 
