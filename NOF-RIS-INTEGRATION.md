@@ -204,6 +204,7 @@ You can find a sample .DCM file in the NodeOnFHIR core distribution at `npmPacka
 
 <img width="2560" height="1440" alt="Screenshot 2026-07-20 at 9 13 26 AM" src="https://github.com/user-attachments/assets/bd28cbe7-76f9-4ee2-ab1c-36d04f4b4825" />
 
+<img width="2560" height="1440" alt="Screenshot 2026-07-20 at 11 05 19 AM" src="https://github.com/user-attachments/assets/1a13e293-580f-4d2a-8aad-87f260061b1b" />
 
 
 ## 7.  Subscribe to Updates Via FHIRCast
@@ -211,6 +212,11 @@ You can find a sample .DCM file in the NodeOnFHIR core distribution at `npmPacka
 
 ### 7A.  Subscribe to Events
 
+<img width="2560" height="1440" alt="Screenshot 2026-07-20 at 11 05 19 AM" src="https://github.com/user-attachments/assets/b5d1f122-4dad-4fa1-99b5-24bbb5e44654" />
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-20 at 11 06 57 AM" src="https://github.com/user-attachments/assets/d92fa465-30d5-4565-b910-976c9caa2621" />
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-20 at 11 26 39 AM" src="https://github.com/user-attachments/assets/4870a739-bf74-4c02-965c-d0c24ba5157f" />
 
 
 ### 7B.  Finalize the Radiology Report
