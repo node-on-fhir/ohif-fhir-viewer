@@ -117,7 +117,6 @@ A second approach to registering the oauth client is to POST a JSON object with 
 }
 ```
 
-
 #### C3.  Register a New Client in the RIS User Interface
 A third approach, is you may also navigate to `http://localhost:3100/oauth-clients` and click **"+ New Client"**. Fill in the following fields:
 
@@ -130,6 +129,13 @@ A third approach, is you may also navigate to `http://localhost:3100/oauth-clien
 | **Response Types** | `code` |
 | **Token Endpoint Auth Method** | `client_secret_basic` |
 
+You may also wish to press the SHIFT+CTRL+I button to enable the Index in the Sidebar, and navigate to the OAuth Clients table via the user interface.  
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-19 at 10 15 56 PM" src="https://github.com/user-attachments/assets/ff273733-c2b7-4d83-897f-997ddddf3dd8" />
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-19 at 11 07 39 PM" src="https://github.com/user-attachments/assets/48b0d7a0-8317-436d-94ef-112417ce84fb" />
+
+
 #### Additional Notes on Registering the OAuth Client
 
 OHIF FHIR Viewer extensions read the client_id at **runtime** from one of the following three browser-native surfaces, in most-specific-wins order.  For SMART Launch contexts, the RIS will provide the client_id when it opens OHIF.  For stand-alone launch workflows, you will want to add the FHIR Server URL and client ID to the User Preferences and store locally.  
@@ -139,5 +145,28 @@ OHIF FHIR Viewer extensions read the client_id at **runtime** from one of the fo
 3. **`window.config`** — the `smartClientId` field in the data source `configuration` of the served `app-config.js` (per-deployment).
 
 
+## 3.  Load a sample Patient into the the RIS
 
-## 3.  Order and Complete an Exam on a Patient
+Once registered, you may wish to load a sample patient into the RIS.  Sample patients have been included in the NodeOnFHIR core project in the `npmPackages/synthea/data/patients` directory.  These records are in `.phr` file format, which is simply a flavor of NDJSON.  For more information on the `.phr` file format, see the [HL7 Personal Health Records Implementation Guide](https://build.fhir.org/ig/HL7/personal-health-record-format-ig/en/). 
+
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-19 at 11 07 54 PM" src="https://github.com/user-attachments/assets/14070ab3-31f1-4bc6-bbdc-da56da841268" />
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-19 at 11 27 28 PM" src="https://github.com/user-attachments/assets/9187a84a-e769-4372-b924-35b61c058f44" />
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-19 at 11 27 47 PM" src="https://github.com/user-attachments/assets/c749846c-58be-45eb-943c-d27d89804590" />
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-19 at 11 27 55 PM" src="https://github.com/user-attachments/assets/9d6f2d13-0c24-4aa7-949d-f40c44aa4109" />
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-19 at 11 28 01 PM" src="https://github.com/user-attachments/assets/2273b31e-29e9-4f5c-ad26-e77c83680773" />
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-19 at 11 28 33 PM" src="https://github.com/user-attachments/assets/06606822-4383-4024-bd85-93d97c535c3a" />
+
+
+## 4.  Order and Complete an Exam on a Patient
+
+
+
+
+
+
