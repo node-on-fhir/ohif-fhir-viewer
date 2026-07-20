@@ -40,7 +40,7 @@ OHIF starts on `http://localhost:3000/fhir-viewer` by default (override with `OH
 
 ## 2. Install and Run the Node on FHIR Radiology System (RIS)
 
-### A. Run Node on FHIR (Honeycomb Edition)
+### A. Run Node on FHIR (on Port 3100)
 
 Install Meteor 3.4, clone the Honeycomb starter, and run it:
 
@@ -67,9 +67,9 @@ When you first run Node on FHIR without a settings file, you'll get the project 
 <img width="2560" height="1440" alt="Screenshot 2026-07-20 at 8 23 20 AM" src="https://github.com/user-attachments/assets/1f6ea52d-275c-44cc-b51d-6abf0f9819c1" />
 
 
-### B. Add the Radiology Workflow Packages, a Settings file, and run on Port 3100
+### B. Add the Radiology Workflow Packages and a Settings file
 
-Clone the `radiology-workflow` package into a local `npmPackages/` directory, then run with the `EXTRA_WORKFLOWS` environment variable and the radiology-workflow settings file on port 3200:
+NodeOnFHIR ships with a `radiology-workflow` package in the `npmPackages/` directory, which we will use via the `EXTRA_WORKFLOWS` environment variable:
 
 ```bash
 INITIALIZE_CONSENT_ENGINE=true CORS=localhost EXTRA_WORKFLOWS=@node-on-fhir/radiology-workflow,@node-on-fhir/fhircast-module,@node-on-fhir/record-lifecycle,@node-on-fhir/clinical:us-core,@node-on-fhir/admin-tools,@node-on-fhir/data-importer,@node-on-fhir/international-patient-summary meteor run --settings npmPackages/fhircast/settings/settings.fhircast.json --port 3100
@@ -77,6 +77,16 @@ INITIALIZE_CONSENT_ENGINE=true CORS=localhost EXTRA_WORKFLOWS=@node-on-fhir/radi
 open http://localhost:3100
 Ctrl+C
 ```
+
+You should see the authentication guard, the sign-up page, and then the main workflow page.  
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-20 at 8 31 34 AM" src="https://github.com/user-attachments/assets/671a1f00-0c9d-46a7-9466-61ba099f0205" />
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-19 at 8 23 03 PM" src="https://github.com/user-attachments/assets/323ecc2c-ea8e-43cd-8396-7b5aabe23546" />
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-19 at 8 23 30 PM" src="https://github.com/user-attachments/assets/6a2aba63-4620-435a-bbae-19dbc4c8ead8" />
+
+
 
 ### C. Register an OAuth Client
 
