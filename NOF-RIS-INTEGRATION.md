@@ -60,6 +60,13 @@ open http://localhost:3100
 Ctrl+C
 ```
 
+When you first run Node on FHIR without a settings file, you'll get the project banner and then the Getting Started screen, which provides a configuration utility for generating custom settings files.  We will be skipping this step with a settings file that ships with the main app, but it is available for those who wish to dig deeper.  Just know if this screen appears, the dependencies have been installed, the server has compiled, and everything is running correctly.  
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-20 at 8 23 17 AM" src="https://github.com/user-attachments/assets/05a8f48b-6745-458a-9a01-4f0576ffadc8" />
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-20 at 8 23 20 AM" src="https://github.com/user-attachments/assets/1f6ea52d-275c-44cc-b51d-6abf0f9819c1" />
+
+
 ### B. Add the Radiology Workflow Packages, a Settings file, and run on Port 3100
 
 Clone the `radiology-workflow` package into a local `npmPackages/` directory, then run with the `EXTRA_WORKFLOWS` environment variable and the radiology-workflow settings file on port 3200:
