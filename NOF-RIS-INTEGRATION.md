@@ -175,16 +175,19 @@ Once registered, you may wish to load a sample patient into the RIS.  Sample pat
 
 <img width="2560" height="1440" alt="Screenshot 2026-07-19 at 11 29 30 PM" src="https://github.com/user-attachments/assets/f03aa554-f157-4260-80de-ea50613ad46b" />
 
-### 5B.  Start the Exam
-
 <img width="2560" height="1440" alt="Screenshot 2026-07-19 at 11 29 41 PM" src="https://github.com/user-attachments/assets/069de216-1f23-49fe-86e3-1091a3ed7600" />
+
+
+### 5B.  Start and Complete the Exam
+
+You can find a sample .DCM file in the NodeOnFHIR core distribution at `npmPackages/radiology-workflow/data/XR_Chest_IM-0031-0001.dcm`
+
 
 <img width="2560" height="1440" alt="Screenshot 2026-07-19 at 11 29 45 PM" src="https://github.com/user-attachments/assets/7c6adc22-c665-45cd-a9aa-5d7c09b502c6" />
 
 <img width="2560" height="1440" alt="Screenshot 2026-07-19 at 11 29 49 PM" src="https://github.com/user-attachments/assets/298a8b5e-a14b-45c7-81b5-aad020cc0d01" />
 
 
-### 5C.  Attach a .DCM File
 
 
 
