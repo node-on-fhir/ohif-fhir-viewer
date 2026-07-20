@@ -187,16 +187,20 @@ You can find a sample .DCM file in the NodeOnFHIR core distribution at `npmPacka
 
 <img width="2560" height="1440" alt="Screenshot 2026-07-19 at 11 29 49 PM" src="https://github.com/user-attachments/assets/298a8b5e-a14b-45c7-81b5-aad020cc0d01" />
 
+<img width="2560" height="1440" alt="Screenshot 2026-07-20 at 9 05 58 AM" src="https://github.com/user-attachments/assets/1a3ba884-9f07-460a-81fc-2c1ad83b3f64" />
 
+<img width="2560" height="1440" alt="Screenshot 2026-07-20 at 9 07 25 AM" src="https://github.com/user-attachments/assets/8a611688-0083-458b-b4a4-fc600eca0fb3" />
 
+<img width="2560" height="1440" alt="Screenshot 2026-07-20 at 9 07 32 AM" src="https://github.com/user-attachments/assets/8dc25ee8-2de6-4336-8f14-1f39a8fdc7a5" />
 
+<img width="2560" height="1440" alt="Screenshot 2026-07-20 at 9 07 41 AM" src="https://github.com/user-attachments/assets/6046a928-1afc-419e-b9c8-89e4d4f0b343" />
 
-
-
+<img width="2560" height="1440" alt="Screenshot 2026-07-20 at 9 07 55 AM" src="https://github.com/user-attachments/assets/2db07918-bdf5-47aa-a4c5-a58e841ce05b" />
 
 
 ## 6.  Launch the Imaging Study in OHIF FHIR Viewer
 
+<img width="2560" height="1440" alt="Screenshot 2026-07-20 at 9 08 27 AM" src="https://github.com/user-attachments/assets/f9252432-1c6c-4402-90ff-11d75972a7e8" />
 
 
 
