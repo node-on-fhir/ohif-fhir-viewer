@@ -165,6 +165,42 @@ Once registered, you may wish to load a sample patient into the RIS.  Sample pat
 
 ## 4.  Order and Complete an Exam on a Patient
 
+<img width="2560" height="1440" alt="Screenshot 2026-07-20 at 8 59 04 AM" src="https://github.com/user-attachments/assets/26b19470-08ee-4102-ad36-b09e86917ad8" />
+
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-20 at 8 59 22 AM" src="https://github.com/user-attachments/assets/cbc1f111-599e-4bb1-b3ff-929ab997242b" />
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-19 at 11 29 30 PM" src="https://github.com/user-attachments/assets/f03aa554-f157-4260-80de-ea50613ad46b" />
+
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-19 at 11 29 41 PM" src="https://github.com/user-attachments/assets/069de216-1f23-49fe-86e3-1091a3ed7600" />
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-19 at 11 29 45 PM" src="https://github.com/user-attachments/assets/7c6adc22-c665-45cd-a9aa-5d7c09b502c6" />
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-19 at 11 29 49 PM" src="https://github.com/user-attachments/assets/298a8b5e-a14b-45c7-81b5-aad020cc0d01" />
+
+
+
+
+
+
+## 5.  Launch the Imaging Study in OHIF FHIR Viewer
+
+
+
+
+## 5.  Subscribe to Updates Via FHIRCast
+
+
+
+
+
+
+
+
+
+
+
 
 
 
