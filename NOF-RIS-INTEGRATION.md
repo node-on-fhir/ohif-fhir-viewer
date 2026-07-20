@@ -221,11 +221,18 @@ You can find a sample .DCM file in the NodeOnFHIR core distribution at `npmPacka
 
 ### 7B.  Finalize the Radiology Report
 
+<img width="2560" height="1440" alt="Screenshot 2026-07-20 at 11 28 38 AM" src="https://github.com/user-attachments/assets/a739289f-a1c9-4340-9143-0861d55642a1" />
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-20 at 11 28 43 AM" src="https://github.com/user-attachments/assets/054670ba-9a30-4f42-ae67-cfa3dacfbc2b" />
+
+<img width="2560" height="1440" alt="Screenshot 2026-07-20 at 11 28 48 AM" src="https://github.com/user-attachments/assets/f6cb714b-4676-438d-935d-6c266792058e" />
+
 
 
 ### 7C.  Observe event updates in the OHIF FHIR Viewer
 
 
+<img width="2560" height="1440" alt="Screenshot 2026-07-20 at 11 29 01 AM" src="https://github.com/user-attachments/assets/3b6abb0a-c3c8-46a9-b703-678bc0913b77" />
 
 
 
