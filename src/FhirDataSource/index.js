@@ -157,15 +157,36 @@ async function _fetchStudyUIDs(patientId) {
     return _store.studyInstanceUIDs;
   } catch (error) {
     console.error('[FHIR] Failed to fetch studies:', error);
-    _showFhirError(_servicesManager, error);
+    _showFhirError(_servicesManager, error, _config.fhirBaseUrl);
     _store.studyInstanceUIDs = [PLACEHOLDER_STUDY_UID];
     return [PLACEHOLDER_STUDY_UID];
   }
 }
 
-function _showFhirError(servicesManager, error) {
+function _showFhirError(servicesManager, error, contextUrl) {
   const { uiNotificationService } = servicesManager?.services || {};
   if (!uiNotificationService) return;
+
+  // A fetch() rejected before any HTTP response arrived — the browser reports
+  // this as TypeError('Failed to fetch') for both CORS blocks and the server
+  // being down, and hides which one it was from JavaScript.
+  const isNetworkOrCorsError =
+    error instanceof TypeError && /failed to fetch|networkerror|load failed/i.test(error.message || '');
+
+  if (isNetworkOrCorsError) {
+    const serverUrl = contextUrl || 'the FHIR server';
+    uiNotificationService.show({
+      title: 'FHIR Server Unreachable (CORS or network)',
+      message:
+        `Could not reach ${serverUrl} from ${window.location.origin}. ` +
+        'Check that the server is running and allows this origin via CORS. ' +
+        'For NodeOnFHIR servers, set private.cors.allowedOrigins in the Meteor settings file. ' +
+        'See the FHIR panel query log for the failed request.',
+      type: 'error',
+      duration: 15000,
+    });
+    return;
+  }
 
   // Try to extract the JSON message from the error string
   // Error format: "FHIR request failed: 501 {"message":"..."}"
