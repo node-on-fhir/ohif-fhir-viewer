@@ -40,7 +40,7 @@ OHIF starts on `http://localhost:3000/fhir-viewer` by default (override with `OH
 
 ## 2. Install and Run the Node on FHIR Radiology System (RIS)
 
-### A. Run Node on FHIR (on Port 3100)
+### 2A. Run Node on FHIR (on Port 3100)
 
 Install Meteor 3.4, clone the Honeycomb starter, and run it:
 
@@ -67,7 +67,7 @@ When you first run Node on FHIR without a settings file, you'll get the project 
 <img width="2560" height="1440" alt="Screenshot 2026-07-20 at 8 23 20 AM" src="https://github.com/user-attachments/assets/1f6ea52d-275c-44cc-b51d-6abf0f9819c1" />
 
 
-### B. Add the Radiology Workflow Packages and a Settings file
+### 2B. Add the Radiology Workflow Packages and a Settings file
 
 NodeOnFHIR ships with a `radiology-workflow` package in the `npmPackages/` directory, which we will use via the `EXTRA_WORKFLOWS` environment variable:
 
@@ -88,12 +88,12 @@ You should see the authentication guard, the sign-up page, and then the main wor
 
 
 
-### C. Register an OAuth Client
+### 3. Register an OAuth Client
 
 The OHIF viewer authenticates against Node on FHIR using SMART on FHIR (OAuth 2.0). You need to register a client so the RIS knows which app is requesting access.  
 
 
-#### C1.  OHIF FHIR Viewer registration via User Preferences
+#### 3A.  OHIF FHIR Viewer registration via User Preferences
 
 The OHIF FHIR Viewer has configuration controls in the Settings > User Preferences panel, which can be used to register OHIF with the FHIR Server.  Just click the (autogenerate) buttons, or fill out the fields with your preferred values.
 
@@ -103,7 +103,7 @@ open http://localhost:3000/fhir-viewer
 
 <img width="2560" height="1440" alt="Screenshot 2026-07-19 at 11 07 17 PM" src="https://github.com/user-attachments/assets/04afb0b2-e508-458d-8cf4-6f581b89147b" />
 
-#### C2.  POST to the /oauth/register endpoint
+#### 3B.  POST to the /oauth/register endpoint
 A second approach to registering the oauth client is to POST a JSON object with the following shape to the `http://localhost:3100/oauth/register` endpoint:
 
 ```json
@@ -117,7 +117,7 @@ A second approach to registering the oauth client is to POST a JSON object with 
 }
 ```
 
-#### C3.  Register a New Client in the RIS User Interface
+#### 3C.  Register a New Client in the RIS User Interface
 A third approach, is you may also navigate to `http://localhost:3100/oauth-clients` and click **"+ New Client"**. Fill in the following fields:
 
 | Field | Value |
@@ -145,7 +145,7 @@ OHIF FHIR Viewer extensions read the client_id at **runtime** from one of the fo
 3. **`window.config`** — the `smartClientId` field in the data source `configuration` of the served `app-config.js` (per-deployment).
 
 
-## 3.  Load a sample Patient into the the RIS
+## 4.  Load a sample Patient into the the RIS
 
 Once registered, you may wish to load a sample patient into the RIS.  Sample patients have been included in the NodeOnFHIR core project in the `npmPackages/synthea/data/patients` directory.  These records are in `.phr` file format, which is simply a flavor of NDJSON.  For more information on the `.phr` file format, see the [HL7 Personal Health Records Implementation Guide](https://build.fhir.org/ig/HL7/personal-health-record-format-ig/en/). 
 
@@ -163,7 +163,10 @@ Once registered, you may wish to load a sample patient into the RIS.  Sample pat
 <img width="2560" height="1440" alt="Screenshot 2026-07-19 at 11 28 33 PM" src="https://github.com/user-attachments/assets/06606822-4383-4024-bd85-93d97c535c3a" />
 
 
-## 4.  Order and Complete an Exam on a Patient
+## 5.  Order and Complete an Exam on a Patient
+
+
+### 5A.  Order the Exam
 
 <img width="2560" height="1440" alt="Screenshot 2026-07-20 at 8 59 04 AM" src="https://github.com/user-attachments/assets/26b19470-08ee-4102-ad36-b09e86917ad8" />
 
@@ -172,6 +175,7 @@ Once registered, you may wish to load a sample patient into the RIS.  Sample pat
 
 <img width="2560" height="1440" alt="Screenshot 2026-07-19 at 11 29 30 PM" src="https://github.com/user-attachments/assets/f03aa554-f157-4260-80de-ea50613ad46b" />
 
+### 5B.  Start the Exam
 
 <img width="2560" height="1440" alt="Screenshot 2026-07-19 at 11 29 41 PM" src="https://github.com/user-attachments/assets/069de216-1f23-49fe-86e3-1091a3ed7600" />
 
@@ -180,16 +184,40 @@ Once registered, you may wish to load a sample patient into the RIS.  Sample pat
 <img width="2560" height="1440" alt="Screenshot 2026-07-19 at 11 29 49 PM" src="https://github.com/user-attachments/assets/298a8b5e-a14b-45c7-81b5-aad020cc0d01" />
 
 
+### 5C.  Attach a .DCM File
 
 
 
 
-## 5.  Launch the Imaging Study in OHIF FHIR Viewer
+
+
+
+## 6.  Launch the Imaging Study in OHIF FHIR Viewer
 
 
 
 
-## 5.  Subscribe to Updates Via FHIRCast
+## 7.  Subscribe to Updates Via FHIRCast
+
+
+### 7A.  Subscribe to Events
+
+
+
+### 7B.  Finalize the Radiology Report
+
+
+
+### 7C.  Observe event updates in the OHIF FHIR Viewer
+
+
+
+
+
+
+
+
+
 
 
 
