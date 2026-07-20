@@ -35,6 +35,8 @@ open http://localhost:3000/fhir-viewer
 
 OHIF starts on `http://localhost:3000` by default (override with `OHIF_PORT`). 
 
+<img width="2560" height="1440" alt="Screenshot 2026-07-19 at 1 29 00 PM" src="https://github.com/user-attachments/assets/6991dfab-74d3-418e-8644-44eab98b4e60" />
+
 
 ## 2. Install and Run the Node on FHIR Radiology System (RIS)
 
