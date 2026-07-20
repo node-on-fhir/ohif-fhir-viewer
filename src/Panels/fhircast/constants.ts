@@ -16,6 +16,12 @@ export const DEFAULT_SELECTED_EVENTS = [
   EventType.PatientClose,
   EventType.ImagingStudyOpen,
   EventType.ImagingStudyClose,
+  EventType.ImagingStudyUpdate,
+  EventType.ImagingStudySelect,
+  EventType.DiagnosticReportOpen,
+  EventType.DiagnosticReportClose,
+  EventType.DiagnosticReportUpdate,
+  EventType.DiagnosticReportSelect,
 ];
 
 export const EVENT_OPTIONS = Object.values(EventType).map((value) => ({

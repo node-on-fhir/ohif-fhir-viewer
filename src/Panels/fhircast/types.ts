@@ -28,6 +28,7 @@ export const EventType = {
   DiagnosticReportClose: 'DiagnosticReport-close',
   PatientUpdate: 'Patient-update',
   ImagingStudyUpdate: 'ImagingStudy-update',
+  ImagingStudySelect: 'ImagingStudy-select',
   EncounterUpdate: 'Encounter-update',
   DiagnosticReportUpdate: 'DiagnosticReport-update',
   DiagnosticReportSelect: 'DiagnosticReport-select',
