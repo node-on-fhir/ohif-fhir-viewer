@@ -15,6 +15,8 @@ import {
 import { useTranslation } from 'react-i18next';
 import i18n from '@ohif/i18n';
 import { getFhirConfig, updateFhirConfig, registerSmartClient } from '../FhirDataSource';
+import { buildRegistrationBody } from '../FhirDataSource/smartAuth';
+import RegistrationBodyEditor from './RegistrationBodyEditor';
 import './smartPreferences.css';
 
 const { availableLanguages, defaultLanguage, currentLanguage: currentLanguageFn } = i18n;
@@ -45,18 +47,6 @@ function loadSmartConfig() {
 
 function saveSmartConfig(config: Record<string, string>) {
   localStorage.setItem(SMART_STORAGE_KEY, JSON.stringify(config));
-}
-
-function AutogenChip({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="smart-autogen-chip"
-    >
-      Autogenerate
-    </button>
-  );
 }
 
 function SmartPreferencesModal({ hide }: { hide: () => void }) {
@@ -103,11 +93,14 @@ function SmartPreferencesModal({ hide }: { hide: () => void }) {
     smartClientId: savedSmart.smartClientId || fhirConfig.smartClientId || '',
     smartClientName: savedSmart.smartClientName || 'OHIF Viewer',
     smartScope: savedSmart.smartScope || fhirConfig.smartScope || 'launch openid fhirUser patient/*.read',
-    fhirBaseUrl: savedSmart.fhirBaseUrl || '',
+    fhirBaseUrl: savedSmart.fhirBaseUrl || DEFAULT_FHIR_BASE_URL,
   });
 
   const [regStatus, setRegStatus] = useState<'idle' | 'registering' | 'success' | 'error'>('idle');
   const [regError, setRegError] = useState('');
+  const [showBodyEditor, setShowBodyEditor] = useState(false);
+  // null = follow the form fields; a string = user-edited body that wins
+  const [bodyOverride, setBodyOverride] = useState<string | null>(null);
 
   const redirectUri = typeof window !== 'undefined'
     ? window.location.origin + '/fhir-viewer'
@@ -156,6 +149,31 @@ function SmartPreferencesModal({ hide }: { hide: () => void }) {
     }
   }, [state.fhirBaseUrl]);
 
+  const defaultBodyJson = useMemo(
+    () =>
+      JSON.stringify(
+        buildRegistrationBody({
+          clientName: state.smartClientName,
+          redirectUris: [redirectUri],
+          scope: state.smartScope,
+        }),
+        null,
+        2
+      ),
+    [state.smartClientName, state.smartScope, redirectUri]
+  );
+
+  const effectiveBody = bodyOverride ?? defaultBodyJson;
+
+  const bodyIsValid = useMemo(() => {
+    try {
+      JSON.parse(effectiveBody);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [effectiveBody]);
+
   const onRegisterHandler = async () => {
     setRegStatus('registering');
     setRegError('');
@@ -166,6 +184,7 @@ function SmartPreferencesModal({ hide }: { hide: () => void }) {
         clientName: state.smartClientName,
         redirectUris: [redirectUri],
         scope: state.smartScope,
+        body: bodyOverride !== null ? JSON.parse(bodyOverride) : undefined,
       });
 
       // Auto-fill client_id from the response
@@ -275,99 +294,133 @@ function SmartPreferencesModal({ hide }: { hide: () => void }) {
         {/* SMART on FHIR Section */}
         <div className="mb-4">
           <UserPreferencesModal.SubHeading>SMART on FHIR</UserPreferencesModal.SubHeading>
-          <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="smart-reg-grid">
+            {/* Row 1: FHIR Server URL + actions */}
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="smart-client-name" className="text-sm">
-                Client Name
+              <Label htmlFor="smart-fhir-url" className="text-sm">
+                FHIR Server URL
               </Label>
               <Input
-                id="smart-client-name"
-                value={state.smartClientName}
-                onChange={e => setState(s => ({ ...s, smartClientName: e.target.value }))}
-                placeholder="e.g. OHIF Viewer"
+                id="smart-fhir-url"
+                value={state.fhirBaseUrl}
+                onChange={e => setState(s => ({ ...s, fhirBaseUrl: e.target.value }))}
+                placeholder={DEFAULT_FHIR_BASE_URL}
               />
             </div>
+            <Button
+              variant="ghost"
+              onClick={() => setShowBodyEditor(v => !v)}
+            >
+              {showBodyEditor ? 'Hide Request Body' : 'Edit Request Body'}
+            </Button>
+            <Button
+              variant="outline"
+              disabled={
+                regStatus === 'registering' ||
+                !state.smartClientName.trim() ||
+                !registrationUrl ||
+                !bodyIsValid
+              }
+              onClick={onRegisterHandler}
+            >
+              {regStatus === 'registering' ? 'Registering...' : 'Register'}
+            </Button>
+            {/* Hint line under the URL input — full-width row so the action
+                buttons above stay bottom-aligned with the input itself */}
+            {(!state.fhirBaseUrl || registrationUrl) && (
+              <p className="text-muted-foreground smart-span-all -mt-2 text-xs">
+                {!state.fhirBaseUrl
+                  ? 'Enter a FHIR Server URL to enable registration.'
+                  : `Registration endpoint: ${registrationUrl}`}
+              </p>
+            )}
+            {/* Collapsible: client metadata + request body — everything that
+                feeds the Register request lives behind Edit Request Body */}
+            {showBodyEditor && (
+              <>
+                <div className="smart-meta-grid smart-span-all">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="smart-client-name" className="text-sm">
+                      Client Name
+                    </Label>
+                    <Input
+                      id="smart-client-name"
+                      value={state.smartClientName}
+                      onChange={e => setState(s => ({ ...s, smartClientName: e.target.value }))}
+                      placeholder="e.g. OHIF Viewer"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="smart-redirect" className="text-sm">
+                      Redirect URI
+                    </Label>
+                    <Input
+                      id="smart-redirect"
+                      value={redirectUri}
+                      readOnly
+                      className="text-muted-foreground cursor-default"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="smart-scope" className="text-sm">
+                      Scopes
+                    </Label>
+                    <Input
+                      id="smart-scope"
+                      value={state.smartScope}
+                      readOnly
+                      className="text-muted-foreground cursor-default"
+                    />
+                  </div>
+                </div>
+                <div className="smart-span-all">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm">Registration Request Body</Label>
+                    <div className="flex items-center gap-3">
+                      {!bodyIsValid && (
+                        <span className="text-muted-foreground text-xs">
+                          Request body is not valid JSON — Register is disabled
+                        </span>
+                      )}
+                      {bodyOverride !== null && (
+                        <button
+                          type="button"
+                          className="smart-body-reset"
+                          onClick={() => setBodyOverride(null)}
+                        >
+                          Reset
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="smart-body-editor">
+                    <RegistrationBodyEditor
+                      value={effectiveBody}
+                      onChange={setBodyOverride}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+            {/* ...Client ID — its output, assigned by the server's response.
+                First grid column only, so it matches the URL input's width. */}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="smart-client-id" className="text-sm">
                 Client ID
               </Label>
-              <div className="smart-autogen-wrap">
-                <Input
-                  id="smart-client-id"
-                  value={state.smartClientId}
-                  onChange={e => setState(s => ({ ...s, smartClientId: e.target.value }))}
-                  placeholder="e.g. kvGGaJjJyBjKRiNXw"
-                  className="smart-autogen-input"
-                />
-                <AutogenChip
-                  onClick={() => setState(s => ({ ...s, smartClientId: crypto.randomUUID() }))}
-                />
-              </div>
+              <Input
+                id="smart-client-id"
+                value={state.smartClientId}
+                onChange={e => setState(s => ({ ...s, smartClientId: e.target.value }))}
+                placeholder="e.g. kvGGaJjJyBjKRiNXw"
+              />
               {!state.smartClientId && (
                 <p className="text-muted-foreground text-xs">
                   No client ID configured. Use Register to obtain one.
                 </p>
               )}
             </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="smart-scope" className="text-sm">
-                Scopes
-              </Label>
-              <Input
-                id="smart-scope"
-                value={state.smartScope}
-                readOnly
-                className="text-muted-foreground cursor-default"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="smart-redirect" className="text-sm">
-                Redirect URI
-              </Label>
-              <Input
-                id="smart-redirect"
-                value={redirectUri}
-                readOnly
-                className="text-muted-foreground cursor-default"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="smart-fhir-url" className="text-sm">
-                FHIR Server URL
-              </Label>
-              <div className="smart-autogen-wrap">
-                <Input
-                  id="smart-fhir-url"
-                  value={state.fhirBaseUrl}
-                  onChange={e => setState(s => ({ ...s, fhirBaseUrl: e.target.value }))}
-                  placeholder={DEFAULT_FHIR_BASE_URL}
-                  className="smart-autogen-input"
-                />
-                <AutogenChip
-                  onClick={() => setState(s => ({ ...s, fhirBaseUrl: DEFAULT_FHIR_BASE_URL }))}
-                />
-              </div>
-            </div>
-            <div className="flex items-end">
-              <Button
-                variant="outline"
-                disabled={regStatus === 'registering' || !state.smartClientName.trim() || !registrationUrl}
-                onClick={onRegisterHandler}
-              >
-                {regStatus === 'registering' ? 'Registering...' : 'Register'}
-              </Button>
-            </div>
           </div>
-          {registrationUrl && (
-            <p className="text-muted-foreground mt-2 text-xs">
-              Registration endpoint: {registrationUrl}
-            </p>
-          )}
-          {!state.fhirBaseUrl && (
-            <p className="text-muted-foreground mt-2 text-xs">
-              Enter a FHIR Server URL to enable registration.
-            </p>
-          )}
           {regStatus === 'success' && (
             <p className="mt-2 text-xs text-green-500">
               Registration successful — Client ID has been filled in.

@@ -4,23 +4,29 @@
  * not scan — utility classes used only in this extension would be purged, so
  * anything layout- or color-critical must be defined here instead of inline. */
 
-.smart-autogen-wrap {
-  @apply relative;
+.smart-body-editor {
+  @apply mt-1.5 overflow-hidden rounded border border-white/10;
 }
 
-.smart-autogen-input {
-  @apply pr-28;
+/* Section grid: column 1 sizes the FHIR Server URL and Client ID inputs
+ * identically; the two auto columns hold the action buttons. Full-width
+ * rows span all columns via .smart-span-all. */
+.smart-reg-grid {
+  @apply mt-3 grid items-end gap-x-2 gap-y-4;
+  grid-template-columns: 1fr auto auto;
+}
+.smart-span-all {
+  grid-column: 1 / -1;
 }
 
-.smart-autogen-chip {
-  @apply absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex items-center rounded-full border border-blue-500/30 bg-blue-500/20 px-2 py-0.5 text-xs leading-none text-blue-400 transition-colors;
+/* md:grid-cols-3 is not used upstream, so it must be compiled here */
+.smart-meta-grid {
+  @apply grid grid-cols-1 gap-4 md:grid-cols-3;
 }
-.smart-autogen-chip:hover {
-  @apply border-blue-400/50 bg-blue-500/30 text-blue-300;
+
+.smart-body-reset {
+  @apply text-xs leading-none text-blue-400 transition-colors;
 }
-.smart-autogen-chip:active {
-  @apply bg-blue-500/40;
-}
-.smart-autogen-chip:focus-visible {
-  @apply outline-none ring-1 ring-blue-400;
+.smart-body-reset:hover {
+  @apply text-blue-300;
 }
