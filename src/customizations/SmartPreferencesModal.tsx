@@ -369,12 +369,12 @@ function SmartPreferencesModal({ hide }: { hide: () => void }) {
             </p>
           )}
           {regStatus === 'success' && (
-            <p className="mt-2 text-xs text-green-400">
+            <p className="mt-2 text-xs text-green-500">
               Registration successful — Client ID has been filled in.
             </p>
           )}
           {regStatus === 'error' && (
-            <p className="mt-2 text-xs text-red-400">
+            <p className="text-muted-foreground mt-2 text-xs">
               Registration failed: {regError}
             </p>
           )}
