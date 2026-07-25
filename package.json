@@ -25,12 +25,15 @@
     "dev:my-extension": "yarn run dev",
     "build": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
     "build:package": "yarn run build",
-    "start": "yarn run dev"
+    "start": "yarn run dev",
+    "test": "jest",
+    "test:unit": "jest",
+    "test:e2e": "bash e2e/run-e2e.sh"
   },
   "peerDependencies": {
     "@ohif/core": "workspace:*",
-    "@ohif/extension-default": "workspace:*",
     "@ohif/extension-cornerstone": "workspace:*",
+    "@ohif/extension-default": "workspace:*",
     "@ohif/i18n": "workspace:*",
     "prop-types": "^15.6.2",
     "react": "^18.3.1",
@@ -43,14 +46,15 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.20.13",
-    "jszip": "^3.10.1",
-    "dcmjs-ecg": "^0.0.14"
+    "dcmjs-ecg": "^0.0.14",
+    "jszip": "^3.10.1"
   },
   "devDependencies": {
     "@babel/core": "7.24.7",
     "@babel/plugin-proposal-class-properties": "^7.16.7",
     "@babel/plugin-proposal-object-rest-spread": "^7.17.3",
     "@babel/plugin-proposal-private-methods": "^7.18.6",
+    "@babel/plugin-proposal-private-property-in-object": "7.21.11",
     "@babel/plugin-syntax-dynamic-import": "^7.8.3",
     "@babel/plugin-transform-arrow-functions": "^7.16.7",
     "@babel/plugin-transform-regenerator": "^7.16.7",
@@ -59,10 +63,10 @@
     "@babel/preset-env": "7.24.7",
     "@babel/preset-react": "^7.16.7",
     "@babel/preset-typescript": "^7.13.0",
-    "@babel/plugin-proposal-private-property-in-object": "7.21.11",
+    "@playwright/test": "^1.61.1",
+    "@svgr/webpack": "^8.1.0",
     "babel-eslint": "9.x",
     "babel-loader": "^8.2.4",
-    "@svgr/webpack": "^8.1.0",
     "babel-plugin-module-resolver": "^5.0.0",
     "clean-webpack-plugin": "^4.0.0",
     "copy-webpack-plugin": "^10.2.0",
@@ -70,8 +74,9 @@
     "dotenv": "^14.1.0",
     "eslint": "^8.39.0",
     "eslint-loader": "^2.0.0",
+    "jest": "^30.4.2",
     "webpack": "5.89.0",
-    "webpack-merge": "^5.7.3",
-    "webpack-cli": "^5.0.2"
+    "webpack-cli": "^5.0.2",
+    "webpack-merge": "^5.7.3"
   }
 }
