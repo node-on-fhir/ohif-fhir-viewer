@@ -46,8 +46,10 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.20.13",
+    "ace-builds": "^1.44.0",
     "dcmjs-ecg": "^0.0.14",
-    "jszip": "^3.10.1"
+    "jszip": "^3.10.1",
+    "react-ace": "^14.0.1"
   },
   "devDependencies": {
     "@babel/core": "7.24.7",

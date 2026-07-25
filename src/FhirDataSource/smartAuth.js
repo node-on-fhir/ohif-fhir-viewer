@@ -203,7 +203,20 @@ export function clearToken() {
 
 // --- Dynamic Client Registration ---
 
-export async function registerSmartClient({ fhirServerRoot, clientName, redirectUris, scope }) {
+export function buildRegistrationBody({ clientName, redirectUris, scope }) {
+  return {
+    client_name: clientName,
+    redirect_uris: redirectUris,
+    grant_types: ['authorization_code'],
+    response_types: ['code'],
+    scope,
+    token_endpoint_auth_method: 'client_secret_basic',
+  };
+}
+
+// `body` (optional) is sent verbatim when provided — the preferences modal
+// passes the user-edited request body; otherwise it is built from the fields.
+export async function registerSmartClient({ fhirServerRoot, clientName, redirectUris, scope, body }) {
   const url = `${fhirServerRoot}/oauth/registration`;
   const entry = {
     timestamp: new Date().toISOString(),
@@ -215,14 +228,9 @@ export async function registerSmartClient({ fhirServerRoot, clientName, redirect
   addLogEntry(entry);
 
   try {
-    const body = {
-      client_name: clientName,
-      redirect_uris: redirectUris,
-      grant_types: ['authorization_code'],
-      response_types: ['code'],
-      scope,
-      token_endpoint_auth_method: 'client_secret_basic',
-    };
+    if (!body) {
+      body = buildRegistrationBody({ clientName, redirectUris, scope });
+    }
 
     const response = await fetch(url, {
       method: 'POST',

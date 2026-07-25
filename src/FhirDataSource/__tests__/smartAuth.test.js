@@ -4,6 +4,8 @@ import {
   generatePKCE,
   buildAuthorizationUrl,
   exchangeCodeForToken,
+  buildRegistrationBody,
+  registerSmartClient,
   saveAuthState,
   loadAuthState,
   clearAuthState,
@@ -166,6 +168,84 @@ describe('exchangeCodeForToken', () => {
         codeVerifier: 'v',
       })
     ).rejects.toThrow(/Token exchange failed: 400/);
+  });
+});
+
+describe('buildRegistrationBody', () => {
+  it('builds a standard dynamic-client-registration body', () => {
+    expect(
+      buildRegistrationBody({
+        clientName: 'OHIF Viewer',
+        redirectUris: ['http://localhost:3000/fhir-viewer'],
+        scope: 'launch openid',
+      })
+    ).toEqual({
+      client_name: 'OHIF Viewer',
+      redirect_uris: ['http://localhost:3000/fhir-viewer'],
+      grant_types: ['authorization_code'],
+      response_types: ['code'],
+      scope: 'launch openid',
+      token_endpoint_auth_method: 'client_secret_basic',
+    });
+  });
+});
+
+describe('registerSmartClient', () => {
+  afterEach(() => {
+    delete global.fetch;
+  });
+
+  it('posts the field-derived body by default', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => ({ client_id: 'new-id' }),
+    });
+
+    const result = await registerSmartClient({
+      fhirServerRoot: 'https://x',
+      clientName: 'OHIF Viewer',
+      redirectUris: ['http://r'],
+      scope: 'launch',
+    });
+
+    expect(result).toEqual({ client_id: 'new-id' });
+    const [url, opts] = global.fetch.mock.calls[0];
+    expect(url).toBe('https://x/oauth/registration');
+    expect(JSON.parse(opts.body)).toEqual(
+      buildRegistrationBody({ clientName: 'OHIF Viewer', redirectUris: ['http://r'], scope: 'launch' })
+    );
+  });
+
+  it('sends a user-supplied body verbatim when provided', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => ({ client_id: 'new-id' }),
+    });
+
+    const custom = { client_name: 'Edited', custom_field: true };
+    await registerSmartClient({
+      fhirServerRoot: 'https://x',
+      clientName: 'ignored',
+      redirectUris: ['http://r'],
+      scope: 'ignored',
+      body: custom,
+    });
+
+    expect(JSON.parse(global.fetch.mock.calls[0][1].body)).toEqual(custom);
+  });
+
+  it('throws with status details when registration fails', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => 'invalid_client_metadata',
+    });
+
+    await expect(
+      registerSmartClient({ fhirServerRoot: 'https://x', clientName: 'c', redirectUris: [], scope: 's' })
+    ).rejects.toThrow(/Client registration failed: 400/);
   });
 });
 

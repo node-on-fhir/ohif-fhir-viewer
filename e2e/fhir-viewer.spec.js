@@ -31,3 +31,43 @@ test('?panel=fhircast activates the FHIRcast panel', async ({ page }) => {
   // "Subscribe to Events" is a section header unique to FhirCastPanel
   await expect(page.getByText('Subscribe to Events')).toBeVisible();
 });
+
+test('Edit Request Body opens an Ace editor with the registration JSON', async ({ page }) => {
+  await page.goto('/fhir-viewer', { waitUntil: 'domcontentloaded' });
+
+  // Settings gear → Preferences opens the SMART preferences modal. The gear
+  // has no stable test id, so probe the menu triggers until the menu
+  // containing "Preferences" opens. The trigger set is re-read each pass
+  // because the header mounts after domcontentloaded.
+  const triggers = page.locator('[aria-haspopup="menu"]');
+  const prefsItem = page.getByRole('menuitem', { name: 'Preferences' });
+  await triggers.first().waitFor({ state: 'visible', timeout: 60_000 });
+
+  const deadline = Date.now() + 60_000;
+  let opened = false;
+  while (!opened && Date.now() < deadline) {
+    const count = await triggers.count();
+    for (let i = count - 1; i >= 0 && !opened; i--) {
+      await triggers.nth(i).click().catch(() => {});
+      opened = await prefsItem
+        .waitFor({ state: 'visible', timeout: 1500 })
+        .then(() => true)
+        .catch(() => false);
+      if (!opened) {
+        await page.keyboard.press('Escape');
+      }
+    }
+    if (!opened) {
+      await page.waitForTimeout(1000);
+    }
+  }
+  await prefsItem.click();
+
+  await page.getByRole('button', { name: 'Edit Request Body' }).click();
+
+  // Ace loads lazily; its rendered content holds the derived registration body
+  const editor = page.locator('.ace_editor');
+  await expect(editor).toBeVisible();
+  await expect(editor).toContainText('client_name');
+  await expect(editor).toContainText('authorization_code');
+});
