@@ -22,3 +22,12 @@ test('the /fhir-viewer mode route loads', async ({ page }) => {
   // exception; network/FHIR failures are caught by the app and do not
   expect(pageErrors).toEqual([]);
 });
+
+// The FHIR config panel is the first right-panel tab and opens by default, so
+// asserting on it would pass trivially — fhircast proves an actual tab switch.
+test('?panel=fhircast activates the FHIRcast panel', async ({ page }) => {
+  await page.goto('/fhir-viewer?panel=fhircast', { waitUntil: 'domcontentloaded' });
+
+  // "Subscribe to Events" is a section header unique to FhirCastPanel
+  await expect(page.getByText('Subscribe to Events')).toBeVisible();
+});

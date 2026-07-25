@@ -12,6 +12,7 @@ import getLayoutTemplateModule from './getLayoutTemplateModule';
 import initTools from './initTools';
 import getToolbarButtons from './toolbarButtons';
 import registerHangingProtocolAttributes from './registerHangingProtocolAttributes';
+import { activatePanelFromUrl } from './panelFromUrl';
 
 const Component = React.lazy(() => {
   return import(/* webpackPrefetch: true */ './viewports/EcgViewport');
@@ -37,6 +38,7 @@ export default {
   onModeEnter({ servicesManager }) {
     const { toolbarService } = servicesManager.services;
     toolbarService.register(getToolbarButtons());
+    activatePanelFromUrl(servicesManager);
   },
 
   getCommandsModule(params) {
