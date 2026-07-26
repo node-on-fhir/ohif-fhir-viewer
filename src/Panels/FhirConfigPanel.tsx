@@ -188,15 +188,17 @@ function FhirConfigPanel() {
     });
   }, []);
 
+  // Semantic classes from fhircast.css — bare color utilities used only in
+  // this extension get purged (see the header comment in that file).
   const getStatusColor = (status) => {
-    if (status === 'pending') return 'text-yellow-400';
-    if (status === 'error' || (typeof status === 'number' && status >= 400)) return 'text-red-400';
-    if (typeof status === 'number' && status >= 200 && status < 300) return 'text-green-400';
+    if (status === 'pending') return 'fhircast-text-pending';
+    if (status === 'error' || (typeof status === 'number' && status >= 400)) return 'fhircast-text-error';
+    if (typeof status === 'number' && status >= 200 && status < 300) return 'fhircast-text-success';
     return 'text-muted-foreground';
   };
 
   return (
-    <div className="flex select-none flex-col">
+    <div className="ohif-scrollbar fhircast-panel-scroll flex select-none flex-col">
       {hasLaunchParams && (
         <PanelSection defaultOpen={false}>
           <PanelSection.Header>SMART Launch</PanelSection.Header>
@@ -417,7 +419,7 @@ function FhirConfigPanel() {
                   title="Click to copy URL"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold">{entry.method}</span>
+                    <span className="font-mono font-bold text-white">{entry.method}</span>
                     <span className={getStatusColor(entry.status)}>
                       {entry.status}
                     </span>
@@ -429,7 +431,7 @@ function FhirConfigPanel() {
                     {new Date(entry.timestamp).toLocaleTimeString()}
                   </div>
                   {entry.error && (
-                    <div className="mt-1 text-red-400">
+                    <div className="fhircast-text-error mt-1">
                       {entry.error.substring(0, 100)}
                     </div>
                   )}

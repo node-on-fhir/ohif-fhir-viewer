@@ -256,7 +256,7 @@ function FhirCastPanel() {
   };
 
   return (
-    <div className="flex select-none flex-col">
+    <div className="ohif-scrollbar fhircast-panel-scroll flex select-none flex-col">
       <PanelSection defaultOpen={true}>
         <PanelSection.Header>Study Context</PanelSection.Header>
         <PanelSection.Content className="bg-muted space-y-2 px-4 pt-2 pb-4">

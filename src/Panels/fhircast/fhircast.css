@@ -27,6 +27,19 @@
 .fhircast-text-success {
   @apply text-green-400;
 }
+.fhircast-text-pending {
+  @apply text-yellow-400;
+}
+.fhircast-text-error {
+  @apply text-red-400;
+}
+
+/* Panel roots: OHIF's SidePanel renders tab content with no scroll wrapper,
+ * so each panel owns its own scrolling. Pair with the ohif-scrollbar class
+ * (plain CSS from ui-next styles.css, not a purgeable utility). */
+.fhircast-panel-scroll {
+  @apply min-h-0 flex-1 overflow-y-auto;
+}
 
 .fhircast-dot--open {
   @apply bg-green-400;
