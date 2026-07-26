@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import i18n from '@ohif/i18n';
 import { getFhirConfig, updateFhirConfig, registerSmartClient } from '../FhirDataSource';
 import { buildRegistrationBody } from '../FhirDataSource/smartAuth';
+import { getEnvSmartClientId, getEnvFhirServerUrl } from '../envConfig';
 import RegistrationBodyEditor from './RegistrationBodyEditor';
 import './smartPreferences.css';
 
@@ -83,17 +84,21 @@ function SmartPreferencesModal({ hide }: { hide: () => void }) {
 
   const currentLanguage = currentLanguageFn();
 
-  // Initialize SMART fields from current config + localStorage overrides
+  // Initialize SMART fields from current config + localStorage overrides.
+  // Env vars (inlined at build time — see src/envConfig.js) win over both and
+  // lock their fields, since editing them here could not change the bundle.
   const fhirConfig = getFhirConfig();
   const savedSmart = loadSmartConfig();
+  const envClientId = getEnvSmartClientId();
+  const envFhirServerUrl = getEnvFhirServerUrl();
 
   const [state, setState] = useState({
     hotkeyDefinitions: initialHotkeyDefinitions,
     languageValue: currentLanguage.value,
-    smartClientId: savedSmart.smartClientId || fhirConfig.smartClientId || '',
+    smartClientId: envClientId || savedSmart.smartClientId || fhirConfig.smartClientId || '',
     smartClientName: savedSmart.smartClientName || 'OHIF Viewer',
     smartScope: savedSmart.smartScope || fhirConfig.smartScope || 'launch openid fhirUser patient/*.read',
-    fhirBaseUrl: savedSmart.fhirBaseUrl || DEFAULT_FHIR_BASE_URL,
+    fhirBaseUrl: envFhirServerUrl || savedSmart.fhirBaseUrl || DEFAULT_FHIR_BASE_URL,
   });
 
   const [regStatus, setRegStatus] = useState<'idle' | 'registering' | 'success' | 'error'>('idle');
@@ -305,7 +310,13 @@ function SmartPreferencesModal({ hide }: { hide: () => void }) {
                 value={state.fhirBaseUrl}
                 onChange={e => setState(s => ({ ...s, fhirBaseUrl: e.target.value }))}
                 placeholder={DEFAULT_FHIR_BASE_URL}
+                disabled={!!envFhirServerUrl}
               />
+              {envFhirServerUrl && (
+                <p className="text-muted-foreground text-xs">
+                  Set by the SMART_FHIR_SERVER_URL environment variable.
+                </p>
+              )}
             </div>
             <Button
               variant="ghost"
@@ -316,6 +327,7 @@ function SmartPreferencesModal({ hide }: { hide: () => void }) {
             <Button
               variant="outline"
               disabled={
+                !!envClientId ||
                 regStatus === 'registering' ||
                 !state.smartClientName.trim() ||
                 !registrationUrl ||
@@ -413,18 +425,47 @@ function SmartPreferencesModal({ hide }: { hide: () => void }) {
                 value={state.smartClientId}
                 onChange={e => setState(s => ({ ...s, smartClientId: e.target.value }))}
                 placeholder="e.g. kvGGaJjJyBjKRiNXw"
+                disabled={!!envClientId}
               />
-              {!state.smartClientId && (
+              {envClientId ? (
                 <p className="text-muted-foreground text-xs">
-                  No client ID configured. Use Register to obtain one.
+                  Set by the SMART_CLIENT_ID environment variable. Registration
+                  is disabled while it is set.
                 </p>
+              ) : (
+                !state.smartClientId && (
+                  <p className="text-muted-foreground text-xs">
+                    No client ID configured. Use Register to obtain one.
+                  </p>
+                )
               )}
             </div>
           </div>
           {regStatus === 'success' && (
-            <p className="mt-2 text-xs text-green-500">
-              Registration successful — Client ID has been filled in.
-            </p>
+            <>
+              <p className="mt-2 text-xs text-green-500">
+                Registration successful — Client ID has been filled in.
+              </p>
+              {state.smartClientId && (
+                <div className="mt-2 rounded border border-white/10 bg-black/30 px-2 py-1.5">
+                  <p className="text-muted-foreground m-0 text-xs">
+                    To persist this Client ID across rebuilds, stop the dev
+                    server and restart it with the environment variable set:
+                  </p>
+                  <pre className="m-0 mt-1 whitespace-pre-wrap break-words font-mono text-xs text-white">
+                    {`SMART_CLIENT_ID=${state.smartClientId} pnpm dev`}
+                  </pre>
+                  <p className="text-muted-foreground m-0 mt-1 text-xs">
+                    or add{' '}
+                    <span className="font-mono">
+                      SMART_CLIENT_ID={state.smartClientId}
+                    </span>{' '}
+                    to <span className="font-mono">platform/app/.env</span> and
+                    restart. The env value takes priority and locks this field.
+                  </p>
+                </div>
+              )}
+            </>
           )}
           {regStatus === 'error' && (
             <p className="text-muted-foreground mt-2 text-xs">

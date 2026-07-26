@@ -12,6 +12,7 @@ import {
 } from './fhirClient';
 import { imagingStudyToStudySummary, extractSeriesMetadata } from './fhirToOhif';
 import { loadDicomFromAttachment, parseDicomArrayBuffer } from './dicomLoader';
+import { getEnvSmartClientId, getEnvFhirServerUrl } from '../envConfig';
 import {
   fetchSmartConfiguration,
   generatePKCE,
@@ -254,6 +255,20 @@ function createFhirApi(fhirConfig, servicesManager) {
       if (parsed.smartScope) _config.smartScope = parsed.smartScope;
       if (parsed.fhirBaseUrl) _config.fhirBaseUrl = parsed.fhirBaseUrl;
     } catch (e) { /* ignore parse errors */ }
+  }
+
+  // Highest precedence: SMART_CLIENT_ID / SMART_FHIR_SERVER_URL env vars,
+  // inlined at build time by the DefinePlugin entries scripts/setup.js patches
+  // into webpack.pwa.js. Env wins over localStorage because the Preferences UI
+  // locks these fields when an env value is present.
+  const envClientId = getEnvSmartClientId();
+  if (envClientId) {
+    _config.smartClientId = envClientId;
+    clientIdSource = 'environment';
+  }
+  const envFhirServerUrl = getEnvFhirServerUrl();
+  if (envFhirServerUrl) {
+    _config.fhirBaseUrl = envFhirServerUrl;
   }
 
   if (!_config.smartClientId) {

@@ -5,7 +5,28 @@ const fs = require('fs');
 const path = require('path');
 
 const EXTENSION_DIR = path.resolve(__dirname, '..');
-const VIEWERS_ROOT = path.resolve(EXTENSION_DIR, '../..');
+
+// Two supported layouts: installed at Viewers/extensions/<name>/ (monorepo),
+// or a sibling checkout next to Viewers/ wired up via pnpm link: entries.
+function resolveViewersRoot() {
+  const candidates = [
+    process.env.VIEWERS_ROOT,
+    path.resolve(EXTENSION_DIR, '../..'),
+    path.resolve(EXTENSION_DIR, '../Viewers'),
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(path.join(candidate, 'platform', 'app', 'pluginConfig.json'))) {
+      return candidate;
+    }
+  }
+
+  console.error('[error] Could not locate the Viewers monorepo from ' + EXTENSION_DIR);
+  console.error('        Set the VIEWERS_ROOT env var to your Viewers checkout.');
+  process.exit(1);
+}
+
+const VIEWERS_ROOT = resolveViewersRoot();
 const MODES_DIR = path.join(VIEWERS_ROOT, 'modes');
 const MODE_TARGET = path.join(MODES_DIR, 'fhir-viewer');
 const MODE_SOURCE = path.join(EXTENSION_DIR, 'mode');
@@ -26,6 +47,17 @@ const MODE_ENTRY = {
 // ---------------------------------------------------------------------------
 
 function copyMode() {
+  // Sibling layout: the mode is already provided via a pnpm link: entry, and
+  // copying it into modes/ would create a duplicate package in the workspace.
+  const workspaceFile = path.join(VIEWERS_ROOT, 'pnpm-workspace.yaml');
+  if (
+    fs.existsSync(workspaceFile) &&
+    fs.readFileSync(workspaceFile, 'utf8').includes('link:../ohif-fhir-viewer/mode')
+  ) {
+    console.log('[skip] mode linked via pnpm workspace — no copy needed');
+    return false;
+  }
+
   if (fs.existsSync(MODE_TARGET)) {
     console.log('[skip] modes/fhir-viewer/ already exists');
     return false;
@@ -143,6 +175,50 @@ function patchWebpackProxy() {
 }
 
 // ---------------------------------------------------------------------------
+// 4. Patch webpack DefinePlugin (inline SMART_* env vars into the bundle)
+// ---------------------------------------------------------------------------
+
+function patchWebpackEnv() {
+  if (!fs.existsSync(WEBPACK_PWA)) {
+    console.error('[error] webpack.pwa.js not found at ' + WEBPACK_PWA);
+    process.exit(1);
+  }
+
+  let content = fs.readFileSync(WEBPACK_PWA, 'utf8');
+
+  if (content.includes('process.env.SMART_CLIENT_ID')) {
+    console.log('[skip] SMART_* DefinePlugin entry already in webpack.pwa.js');
+    return;
+  }
+
+  const DEFINE_BLOCK = [
+    '  // Inline SMART_* env vars for @ohif/fhir-viewer (patched by its scripts/setup.js).',
+    '  // Values come from the shell or platform/app/.env (dotenv loads it above).',
+    '  mergedConfig.plugins.push(',
+    '    new rspack.DefinePlugin({',
+    "      'process.env.SMART_CLIENT_ID': JSON.stringify(process.env.SMART_CLIENT_ID || ''),",
+    "      'process.env.SMART_FHIR_SERVER_URL': JSON.stringify(process.env.SMART_FHIR_SERVER_URL || ''),",
+    '    })',
+    '  );',
+    '',
+  ].join('\n');
+
+  // Insert on the line before the final `return mergedConfig;`
+  const returnIdx = content.lastIndexOf('return mergedConfig;');
+  if (returnIdx === -1) {
+    console.error('[error] Could not find `return mergedConfig;` in webpack.pwa.js');
+    console.error('        Please add the SMART_* DefinePlugin block manually.');
+    return;
+  }
+
+  const lineStart = content.lastIndexOf('\n', returnIdx) + 1;
+  content = content.slice(0, lineStart) + DEFINE_BLOCK + content.slice(lineStart);
+
+  fs.writeFileSync(WEBPACK_PWA, content);
+  console.log('[done] Added SMART_* DefinePlugin entry to webpack.pwa.js');
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
@@ -154,6 +230,7 @@ console.log('');
 copyMode();
 patchPluginConfig();
 patchWebpackProxy();
+patchWebpackEnv();
 
 console.log('');
 console.log('Next steps:');

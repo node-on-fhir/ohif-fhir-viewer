@@ -72,13 +72,36 @@ A `webApi` data source that connects to FHIR R4 servers with SMART on FHIR auth,
 
 ### SMART on FHIR Configuration
 
-The SMART `client_id` used during the OAuth flow defaults to the value in `config/default.js` (`smartClientId`). To override it per-environment without editing `default.js`, add the following to `Viewers/platform/app/.env`:
+The SMART `client_id` and FHIR server URL resolve in this order (highest first):
+
+1. `SMART_CLIENT_ID` / `SMART_FHIR_SERVER_URL` environment variables (inlined at build time)
+2. Values saved from the SMART Preferences modal (localStorage)
+3. `smartClientId` in the OHIF data-source configuration
+
+**Registering a client**
+
+Open User Preferences → SMART on FHIR, enter the FHIR Server URL, and click **Register**. The server's dynamic registration endpoint returns a `client_id`, which is filled into the Client ID field automatically.
+
+**Persisting the Client ID via environment variable**
+
+The registered `client_id` lives in localStorage until you persist it. To make it survive across browsers and rebuilds, restart the dev server with the environment variable set:
+
+```bash
+SMART_CLIENT_ID=your-registered-client-id pnpm dev
+```
+
+or add it (and optionally the server URL) to `Viewers/platform/app/.env`:
 
 ```
 SMART_CLIENT_ID=your-registered-client-id
+SMART_FHIR_SERVER_URL=http://localhost:3100/baseR4
 ```
 
-The `.env` value takes priority over the config file. Restart the dev server after changing `.env`.
+Notes:
+
+- `node scripts/setup.js` must have been run — it patches a `DefinePlugin` entry into `webpack.pwa.js` that inlines both variables into the bundle. Without the patch the variables are silently ignored.
+- The values are inlined **at build time**, so changing them always requires a dev-server restart.
+- When an environment variable is set, the corresponding field in the SMART Preferences modal is filled in and locked, and Register is disabled (a new registration could not overwrite the inlined value).
 
 **Hanging Protocols**
 - `chestBodyPart` — body-part-aware protocol for chest imaging
