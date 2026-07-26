@@ -449,19 +449,22 @@ function SmartPreferencesModal({ hide }: { hide: () => void }) {
               {state.smartClientId && (
                 <div className="mt-2 rounded border border-white/10 bg-black/30 px-2 py-1.5">
                   <p className="text-muted-foreground m-0 text-xs">
-                    To persist this Client ID across rebuilds, stop the dev
-                    server and restart it with the environment variable set:
+                    To persist these settings across rebuilds, stop the dev
+                    server and restart it with the environment variables set:
                   </p>
                   <pre className="m-0 mt-1 whitespace-pre-wrap break-words font-mono text-xs text-white">
-                    {`SMART_CLIENT_ID=${state.smartClientId} pnpm dev`}
+                    {`SMART_CLIENT_ID=${state.smartClientId} SMART_FHIR_SERVER_URL=${state.fhirBaseUrl} pnpm dev`}
                   </pre>
                   <p className="text-muted-foreground m-0 mt-1 text-xs">
-                    or add{' '}
-                    <span className="font-mono">
-                      SMART_CLIENT_ID={state.smartClientId}
-                    </span>{' '}
-                    to <span className="font-mono">platform/app/.env</span> and
-                    restart. The env value takes priority and locks this field.
+                    or add the following to{' '}
+                    <span className="font-mono">platform/app/.env</span> and
+                    restart:
+                  </p>
+                  <pre className="m-0 mt-1 whitespace-pre-wrap break-words font-mono text-xs text-white">
+                    {`SMART_CLIENT_ID=${state.smartClientId}\nSMART_FHIR_SERVER_URL=${state.fhirBaseUrl}`}
+                  </pre>
+                  <p className="text-muted-foreground m-0 mt-1 text-xs">
+                    Env values take priority and lock these fields.
                   </p>
                 </div>
               )}
