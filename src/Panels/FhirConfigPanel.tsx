@@ -198,7 +198,7 @@ function FhirConfigPanel() {
   return (
     <div className="flex select-none flex-col">
       {hasLaunchParams && (
-        <PanelSection defaultOpen={true}>
+        <PanelSection defaultOpen={false}>
           <PanelSection.Header>SMART Launch</PanelSection.Header>
           <PanelSection.Content className="bg-muted space-y-2 px-4 pt-2 pb-4">
             {Object.entries(urlParams).map(([key, value]) => (
@@ -228,7 +228,7 @@ function FhirConfigPanel() {
       )}
 
       {isOAuthAuthenticated && (
-        <PanelSection defaultOpen={true}>
+        <PanelSection defaultOpen={false}>
           <PanelSection.Header>SMART Auth</PanelSection.Header>
           <PanelSection.Content className="bg-muted space-y-2 px-4 pt-2 pb-4">
             <div className="flex items-center space-x-2">
@@ -275,7 +275,7 @@ function FhirConfigPanel() {
         </PanelSection>
       )}
 
-      <PanelSection defaultOpen={true}>
+      <PanelSection defaultOpen={false}>
         <PanelSection.Header>FHIR Connection</PanelSection.Header>
         <PanelSection.Content className="bg-muted space-y-3 px-4 pt-2 pb-4">
           <div className="flex flex-col space-y-1">
