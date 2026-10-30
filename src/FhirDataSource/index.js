@@ -134,22 +134,15 @@ export function updateFhirConfig(newConfig) {
 }
 
 /**
- * The bearer token to send, falling back to OHIF's own session.
+ * The bearer token to send: the extension's own SMART token when there is one,
+ * else the token of the login OHIF already performed (userAuthenticationService).
  *
- * This extension runs its own SMART flow and keeps the resulting token in
- * `_config.authToken`, entirely separate from the OIDC login OHIF already
- * performed. Nothing bridged the two, so on a deployment where the user is
- * signed in to OHIF but never completed a SMART launch, every FHIR read and
- * every FHIRcast hub POST went out with no Authorization header at all and the
- * server answered 401 — while DICOM images loaded fine, because Cornerstone
- * takes its headers from userAuthenticationService.
- *
- * Called at each request site rather than written back into `_config.authToken`.
- * Caching it there would also feed the DICOMweb auth bridge below, which treats
- * a set `_config.authToken` as "there is a SMART token" — so a snapshot taken at
- * init would keep being sent after OHIF refreshed, and DICOM images would start
- * failing. The extension's own SMART token still wins when there is one, so an
- * explicit launch keeps its narrower scopes.
+ * Without the fallback, a user signed in to OHIF who never completed a SMART
+ * launch sent every FHIR read and FHIRcast hub POST unauthenticated (401),
+ * while DICOM images loaded fine. Resolved at each request site rather than
+ * cached into `_config.authToken`: the DICOMweb auth bridge treats a set
+ * `authToken` as "there is a SMART token", so a snapshot taken at init would
+ * keep being sent after OHIF refreshed its own.
  */
 export function getEffectiveAuthToken() {
   if (_config.authToken) {
@@ -933,6 +926,22 @@ function createFhirApi(fhirConfig, servicesManager, extensionManager) {
         return _getDicomWebDelegate()?.retrieve?.bulkDataURI?.(params);
       },
       series: {
+        /**
+         * Load series/instance metadata for a study (DICOMweb delegate first,
+         * then the FHIR paths).
+         *
+         * A study already in `loadedStudies` is skipped only while the display
+         * sets for it still exist. The two stores have different lifetimes:
+         * DicomMetadataStore is a module singleton that survives route changes,
+         * but Mode.tsx calls displaySetService.init() on every mode entry,
+         * which clears the display sets. Navigating back to a visited study
+         * therefore arrives with metadata cached and display sets gone, and
+         * skipping on the metadata alone left the viewport black — nothing
+         * re-added the instances, so no INSTANCES_ADDED fired and nothing
+         * rebuilt the display sets. (Nothing else clears the flag either:
+         * deleteStudyMetadataPromise would, but OHIF only calls it after a
+         * STOW upload, never on navigation.)
+         */
         metadata: async ({
           filters = {},
           StudyInstanceUID,
@@ -946,19 +955,8 @@ function createFhirApi(fhirConfig, servicesManager, extensionManager) {
           }
 
           if (_store.loadedStudies.has(StudyInstanceUID)) {
-            // Skipping is only safe while the work this function did is still
-            // standing, and that is two separate stores. DicomMetadataStore is a
-            // module singleton that survives route changes, but display sets do
-            // not: Mode.tsx calls displaySetService.init() on every mode entry
-            // and that assigns `activeDisplaySets = []`. Navigating back to an
-            // already-visited study therefore arrives with the metadata still
-            // cached and the display sets gone, and skipping on the metadata
-            // alone left the viewport black — nothing re-adds the instances, so
-            // no INSTANCES_ADDED fires and nothing rebuilds the display sets.
-            //
-            // Nothing else clears this either: deleteStudyMetadataPromise is the
-            // only hook that would, and OHIF calls it in exactly one place, after
-            // a STOW upload, never on navigation.
+            // Only skip while the display sets are still standing (see doc
+            // comment above).
             const displaySetService = _servicesManager?.services?.displaySetService;
             const hasDisplaySets = !!displaySetService
               ?.getActiveDisplaySets()
