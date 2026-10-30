@@ -20,6 +20,10 @@ jest.mock('../../../FhirDataSource', () => ({
   registerImagingStudyContext: (...args) => mockRegister(...args),
 }));
 
+// The confirm dialog is a React component rendered by OHIF's modal service;
+// these tests assert on the uiModalService calls, not on its rendering.
+jest.mock('../FhircastNavigationConfirm', () => ({ __esModule: true, default: () => null }));
+
 function imagingStudyEvent(hubEvent, resource, id = Math.random().toString(36).slice(2)) {
   return {
     id,
@@ -177,5 +181,115 @@ describe('fhircastContextListener', () => {
     // Registration still runs, but navigation is held back with no active route.
     expect(mockRegister).toHaveBeenCalled();
     expect(runCommand).not.toHaveBeenCalled();
+  });
+
+  describe('navigation guard (unsaved work / patient change)', () => {
+    let uiModalService;
+
+    // Re-register the listener with the services the guard consults; the
+    // start call is idempotent for the subscription but refreshes services.
+    function useServices({ measurements = [], segmentations = [], modal = true } = {}) {
+      uiModalService = modal ? { show: jest.fn(), hide: jest.fn() } : undefined;
+      listener.startFhircastContextListener({
+        servicesManager: {
+          services: {
+            uiNotificationService,
+            measurementService: { getMeasurements: () => measurements },
+            segmentationService: { getSegmentations: () => segmentations },
+            ...(uiModalService ? { uiModalService } : {}),
+          },
+        },
+        commandsManager: { runCommand },
+      });
+    }
+
+    it('asks before navigating when unsaved measurements exist', async () => {
+      useServices({ measurements: [{ uid: 'm1' }] });
+      mockRegister.mockResolvedValue({ StudyInstanceUID: '5.5.5', patientId: 'pat-1' });
+      await deliver(imagingStudyEvent('ImagingStudy-open', { resourceType: 'ImagingStudy', id: 'is-m' }));
+
+      expect(runCommand).not.toHaveBeenCalled();
+      expect(uiModalService.show).toHaveBeenCalledTimes(1);
+      expect(uiModalService.show.mock.calls[0][0].contentProps).toMatchObject({
+        nextStudyUid: '5.5.5',
+        unsavedWork: true,
+      });
+      expect(listener.getPendingFhircastContext()).toMatchObject({ StudyInstanceUID: '5.5.5' });
+    });
+
+    it('asks before navigating when the context changes the active patient', async () => {
+      window.history.pushState({}, '', '/fhir-viewer?patient=pat-A');
+      useServices();
+      mockRegister.mockResolvedValue({ StudyInstanceUID: '6.6.6', patientId: 'pat-B' });
+      await deliver(imagingStudyEvent('ImagingStudy-open', { resourceType: 'ImagingStudy', id: 'is-p' }));
+
+      expect(runCommand).not.toHaveBeenCalled();
+      expect(uiModalService.show).toHaveBeenCalledTimes(1);
+      expect(uiModalService.show.mock.calls[0][0].contentProps).toMatchObject({
+        currentPatientId: 'pat-A',
+        nextPatientId: 'pat-B',
+        patientChanges: true,
+      });
+    });
+
+    it('navigates without asking when there is no unsaved work and the patient is unchanged', async () => {
+      window.history.pushState({}, '', '/fhir-viewer?patient=pat-1');
+      useServices();
+      mockRegister.mockResolvedValue({ StudyInstanceUID: '5.5.5', patientId: 'pat-1' });
+      await deliver(imagingStudyEvent('ImagingStudy-open', { resourceType: 'ImagingStudy', id: 'is-c' }));
+
+      expect(uiModalService.show).not.toHaveBeenCalled();
+      expect(runCommand).toHaveBeenCalledWith('navigateHistory', expect.objectContaining({
+        to: expect.stringContaining('StudyInstanceUIDs=5.5.5'),
+      }));
+    });
+
+    it('accepting opens the most recent context, not the first deferred one', async () => {
+      useServices({ measurements: [{ uid: 'm1' }] });
+      mockRegister.mockResolvedValueOnce({ StudyInstanceUID: '1.1.1', patientId: 'pat-1' });
+      await deliver(imagingStudyEvent('ImagingStudy-open', { resourceType: 'ImagingStudy', id: 'first' }));
+      mockRegister.mockResolvedValueOnce({ StudyInstanceUID: '2.2.2', patientId: 'pat-2' });
+      await deliver(imagingStudyEvent('ImagingStudy-open', { resourceType: 'ImagingStudy', id: 'second' }));
+
+      // Accept via the dialog's Open button (same function the panel uses).
+      const { onOpen } = uiModalService.show.mock.calls.at(-1)[0].contentProps;
+      onOpen();
+
+      expect(runCommand).toHaveBeenCalledTimes(1);
+      expect(runCommand).toHaveBeenCalledWith('navigateHistory', expect.objectContaining({
+        to: expect.stringContaining('StudyInstanceUIDs=2.2.2'),
+      }));
+      expect(uiModalService.hide).toHaveBeenCalled();
+      expect(listener.getPendingFhircastContext()).toBeNull();
+    });
+
+    it('"Not now" dismisses but keeps the context pending for the accept-later path', async () => {
+      useServices({ segmentations: [{ id: 's1' }] });
+      mockRegister.mockResolvedValue({ StudyInstanceUID: '8.8.8', patientId: 'pat-1' });
+      await deliver(imagingStudyEvent('ImagingStudy-open', { resourceType: 'ImagingStudy', id: 'is-d' }));
+
+      const { onCancel } = uiModalService.show.mock.calls[0][0].contentProps;
+      onCancel();
+      expect(uiModalService.hide).toHaveBeenCalled();
+      expect(runCommand).not.toHaveBeenCalled();
+      expect(listener.getPendingFhircastContext()).toMatchObject({ StudyInstanceUID: '8.8.8' });
+
+      // Accept later (the panel's Open button) — opens the deferred context.
+      listener.openPendingFhircastContext();
+      expect(runCommand).toHaveBeenCalledWith('navigateHistory', expect.objectContaining({
+        to: expect.stringContaining('StudyInstanceUIDs=8.8.8'),
+      }));
+      expect(listener.getPendingFhircastContext()).toBeNull();
+    });
+
+    it('falls back to navigating when no modal service exists to ask with', async () => {
+      useServices({ measurements: [{ uid: 'm1' }], modal: false });
+      mockRegister.mockResolvedValue({ StudyInstanceUID: '3.3.3', patientId: 'pat-1' });
+      await deliver(imagingStudyEvent('ImagingStudy-open', { resourceType: 'ImagingStudy', id: 'is-f' }));
+
+      expect(runCommand).toHaveBeenCalledWith('navigateHistory', expect.objectContaining({
+        to: expect.stringContaining('StudyInstanceUIDs=3.3.3'),
+      }));
+    });
   });
 });

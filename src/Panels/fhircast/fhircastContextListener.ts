@@ -1,5 +1,6 @@
 import { getSessionSnapshot, setImagingStudyContext, subscribeToSession } from './fhircastSession';
 import { registerImagingStudyContext } from '../../FhirDataSource';
+import FhircastNavigationConfirm from './FhircastNavigationConfirm';
 
 /**
  * Acts on FHIRcast context events, from module scope rather than from the panel.
@@ -36,6 +37,10 @@ let openedStudyUid = '';
 // active, so an event arriving from the study list does not try to route into a
 // viewer that is not there.
 let viewerPathname = '';
+// The newest context the user has not acted on yet. Set when navigation is
+// gated behind the confirm dialog; a newer gated event overwrites it, so
+// accepting always opens the most recent context, not the first deferred one.
+let pendingContext: { StudyInstanceUID: string; patientId: string } | null = null;
 
 function extractStudyContext(event: Record<string, unknown> | undefined) {
   if (!event) {
@@ -94,20 +99,91 @@ async function openStudyFromContext(resource: Record<string, unknown>): Promise<
     return;
   }
 
+  const patientId = registered?.patientId || '';
+
+  // Navigating is a full mode exit/entry in OHIF: segmentationService.destroy()
+  // and MeasurementService.onModeExit() clear unsaved work with no prompt of
+  // their own. When any exists, or the context moves to another patient, the
+  // user confirms first. ACK already went out on receipt, so deferring here
+  // cannot cause a FHIRcast SyncError.
+  const currentPatientId = new URLSearchParams(window.location.search).get('patient') || '';
+  const patientChanges = !!(patientId && currentPatientId && patientId !== currentPatientId);
+  if (!patientChanges && !hasUnsavedWork()) {
+    navigateToStudy(StudyInstanceUID, patientId);
+    return;
+  }
+
+  pendingContext = { StudyInstanceUID, patientId };
+  showNavigationConfirm(patientChanges);
+}
+
+function hasUnsavedWork(): boolean {
+  const svc = services?.services;
+  const measurements = svc?.measurementService?.getMeasurements?.() || [];
+  const segmentations = svc?.segmentationService?.getSegmentations?.() || [];
+  return measurements.length > 0 || segmentations.length > 0;
+}
+
+function navigateToStudy(StudyInstanceUID: string, patientId: string): void {
   openedStudyUid = StudyInstanceUID;
+  pendingContext = null;
 
   // Keep every other param (iss, launch, patient, ...) and the route captured on
   // mode entry, which already names the mode and the data source.
   const query = new URLSearchParams(window.location.search);
   query.set('StudyInstanceUIDs', StudyInstanceUID);
-  if (registered?.patientId) {
+  if (patientId) {
     // The data source re-reads this on every route change and lists the
     // patient's studies from it, so it has to move with the context.
-    query.set('patient', registered.patientId);
+    query.set('patient', patientId);
   }
 
   console.log('[FhirCast] Opening study from context:', StudyInstanceUID);
   commands?.runCommand('navigateHistory', { to: `${viewerPathname}?${query.toString()}` });
+}
+
+function showNavigationConfirm(patientChanges: boolean): void {
+  const uiModalService = services?.services?.uiModalService;
+  if (!uiModalService?.show || !pendingContext) {
+    // No modal service to ask with (e.g. a headless deployment): keep the
+    // pre-dialog behavior of following context rather than silently dropping it.
+    if (pendingContext) {
+      navigateToStudy(pendingContext.StudyInstanceUID, pendingContext.patientId);
+    }
+    return;
+  }
+
+  const query = new URLSearchParams(window.location.search);
+  uiModalService.show({
+    title: 'FHIRcast — open study from context?',
+    content: FhircastNavigationConfirm,
+    contentProps: {
+      currentStudyUid: query.get('StudyInstanceUIDs') || '',
+      currentPatientId: query.get('patient') || '',
+      nextStudyUid: pendingContext.StudyInstanceUID,
+      nextPatientId: pendingContext.patientId,
+      unsavedWork: hasUnsavedWork(),
+      patientChanges,
+      onOpen: () => openPendingFhircastContext(),
+      // "Not now" only dismisses — the context stays pending so the panel's
+      // Open button (the accept-later path) can still act on it.
+      onCancel: () => uiModalService.hide?.(),
+    },
+  });
+}
+
+/** The context waiting on user confirmation, if any (newest wins). */
+export function getPendingFhircastContext(): { StudyInstanceUID: string; patientId: string } | null {
+  return pendingContext;
+}
+
+/** Open the most recent deferred context — the dialog's Open button and the panel's. */
+export function openPendingFhircastContext(): void {
+  services?.services?.uiModalService?.hide?.();
+  if (!pendingContext || !viewerPathname) {
+    return;
+  }
+  navigateToStudy(pendingContext.StudyInstanceUID, pendingContext.patientId);
 }
 
 function handleLatestEvent(): void {
@@ -161,5 +237,6 @@ export function stopFhircastContextListener(): void {
   unsubscribe?.();
   unsubscribe = null;
   started = false;
+  pendingContext = null;
   suspendFhircastContextListener();
 }

@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useSystem } from '@ohif/core';
-import { PanelSection } from '@ohif/ui-next';
+import { Button, PanelSection } from '@ohif/ui-next';
+import {
+  getPendingFhircastContext,
+  openPendingFhircastContext,
+} from './fhircast/fhircastContextListener';
 import SubscribeForm from './fhircast/SubscribeForm';
 import SubscriptionList from './fhircast/SubscriptionList';
 import EventsList from './fhircast/EventsList';
@@ -265,6 +269,16 @@ function FhirCastPanel() {
               </span>
             </div>
           </div>
+          {getPendingFhircastContext() && (
+            <div className="space-y-1.5">
+              <div className="text-muted-foreground text-xs">
+                A context event is waiting (deferred from the confirm dialog)
+              </div>
+              <Button variant="default" size="sm" onClick={() => openPendingFhircastContext()}>
+                Open study {getPendingFhircastContext()?.StudyInstanceUID}
+              </Button>
+            </div>
+          )}
           <div className="space-y-1.5">
             <div className="text-muted-foreground text-xs">Status</div>
             <div>
