@@ -89,13 +89,23 @@ jest.mock('../../envConfig', () => ({
 jest.mock('dcmjs', () => ({ data: {}, utilities: {} }), { virtual: true });
 
 function makeServices() {
+  // Mirrors OHIF's UserAuthenticationService: setServiceImplementation stores
+  // the function as serviceImplementation._getAuthorizationHeader (which is
+  // what the auth bridge captures as `previous`), and the public method
+  // dispatches to it.
   const impl = {};
   return {
     services: {
       userAuthenticationService: {
         serviceImplementation: impl,
-        setServiceImplementation: jest.fn(next => Object.assign(impl, next)),
-        getAuthorizationHeader: () => impl.getAuthorizationHeader?.(),
+        setServiceImplementation: jest.fn(({ getAuthorizationHeader }) => {
+          if (getAuthorizationHeader) {
+            impl._getAuthorizationHeader = getAuthorizationHeader;
+          }
+        }),
+        getAuthorizationHeader() {
+          return impl._getAuthorizationHeader?.();
+        },
       },
       displaySetService: { getActiveDisplaySets: () => [] },
       uiNotificationService: { show: jest.fn() },
@@ -284,6 +294,37 @@ describe('FhirDataSource DICOMweb delegation', () => {
       const uas = services.services.userAuthenticationService;
       expect(uas.setServiceImplementation).toHaveBeenCalled();
       expect(uas.getAuthorizationHeader()).toEqual({ Authorization: 'Bearer smart-abc' });
+    });
+
+    it('falls back to the previous implementation without recursing when there is no SMART token', async () => {
+      // The "OHIF OIDC login, no SMART launch" case: the bridge must return the
+      // header of the implementation it replaced, and must not call the public
+      // getAuthorizationHeader() (which dispatches back to the bridge — the
+      // recursion found in review).
+      init({
+        fhirBaseUrl: 'http://fhir.test/R4',
+        dicomWebRoot: 'http://dcm.test/dicomweb',
+      });
+      const previous = jest.fn(() => ({ Authorization: 'Bearer ohif-oidc' }));
+      services.services.userAuthenticationService.serviceImplementation._getAuthorizationHeader =
+        previous;
+
+      mockExtractSeriesMetadata.mockReturnValue({
+        seriesList: [{ SeriesInstanceUID: 's1' }],
+        instancesBySeriesUID: new Map([['s1', []]]),
+      });
+      await mod.registerImagingStudyContext({ resourceType: 'ImagingStudy', id: 'is1', __uid: '1.2.3', series: [{}] });
+      await api.retrieve.series.metadata({ StudyInstanceUID: '1.2.3' });
+
+      const uas = services.services.userAuthenticationService;
+      const publicSpy = jest.spyOn(uas, 'getAuthorizationHeader');
+      // Only count from here — the retrieve above legitimately reads the header.
+      previous.mockClear();
+
+      expect(uas.getAuthorizationHeader()).toEqual({ Authorization: 'Bearer ohif-oidc' });
+      // Exactly the one external call — the bridge never re-enters the service.
+      expect(publicSpy).toHaveBeenCalledTimes(1);
+      expect(previous).toHaveBeenCalledTimes(1);
     });
   });
 

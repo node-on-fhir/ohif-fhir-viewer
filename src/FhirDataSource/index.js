@@ -358,10 +358,14 @@ function _bridgeAuthToken() {
   // Re-checked on every delegate access rather than latched, because anything
   // else in the app may install its own implementation later (OHIF's OIDC
   // provider does, on mount) and drop this one.
+  //
+  // Reads _config.authToken directly, NOT getEffectiveAuthToken(): that helper
+  // falls back to the public getAuthorizationHeader(), which dispatches right
+  // back here — with no SMART token every header lookup recursed to stack
+  // overflow before the catch unwound it.
   const bridged = () => {
-    const token = getEffectiveAuthToken();
-    if (token) {
-      return { Authorization: `Bearer ${token}` };
+    if (_config.authToken) {
+      return { Authorization: `Bearer ${_config.authToken}` };
     }
     return (typeof previous === 'function' ? previous() : undefined) || {};
   };
