@@ -123,6 +123,13 @@ export function updateFhirConfig(newConfig) {
   if (newConfig && rootKeys.some(key => key in newConfig)) {
     _dicomWebDelegate = undefined;
     _store.dicomWebAttempted.clear();
+    // Studies delegated to the old server must not keep routing image-id
+    // requests to the new one (its metadata cache has never seen them), and
+    // metadata() must load them again rather than skip them as already loaded.
+    for (const uid of _store.dicomWebStudies) {
+      _store.loadedStudies.delete(uid);
+    }
+    _store.dicomWebStudies.clear();
   }
 }
 
@@ -1499,7 +1506,13 @@ function createFhirApi(fhirConfig, servicesManager, extensionManager) {
 
     getImageIdsForDisplaySet(displaySet) {
       if (_isDicomWebStudy(displaySet?.StudyInstanceUID)) {
-        return _getDicomWebDelegate().getImageIdsForDisplaySet(displaySet);
+        // The delegate can be gone even though the study is still marked
+        // delegated (a root change rebuilt it and the rebuild failed) — fall
+        // through to the FHIR-attachment path rather than throwing.
+        const delegate = _getDicomWebDelegate();
+        if (delegate) {
+          return delegate.getImageIdsForDisplaySet(displaySet);
+        }
       }
 
       const images = displaySet.images;
@@ -1529,7 +1542,10 @@ function createFhirApi(fhirConfig, servicesManager, extensionManager) {
 
     getImageIdsForInstance({ instance, frame }) {
       if (_isDicomWebStudy(instance?.StudyInstanceUID)) {
-        return _getDicomWebDelegate().getImageIdsForInstance({ instance, frame });
+        const delegate = _getDicomWebDelegate();
+        if (delegate) {
+          return delegate.getImageIdsForInstance({ instance, frame });
+        }
       }
 
       const baseImageId = instance.imageId || instance.url || '';

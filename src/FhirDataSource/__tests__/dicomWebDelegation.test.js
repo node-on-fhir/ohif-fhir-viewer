@@ -328,6 +328,51 @@ describe('FhirDataSource DICOMweb delegation', () => {
     });
   });
 
+  describe('DICOMweb root change (updateFhirConfig)', () => {
+    beforeEach(async () => {
+      init({ fhirBaseUrl: 'http://fhir.test/R4', dicomWebRoot: 'http://old.test/dicomweb' });
+      mockExtractSeriesMetadata.mockReturnValue({
+        seriesList: [{ SeriesInstanceUID: 's1' }],
+        instancesBySeriesUID: new Map([['s1', []]]),
+      });
+      await mod.registerImagingStudyContext({ resourceType: 'ImagingStudy', id: 'is1', __uid: '1.2.3', series: [{}] });
+      await api.retrieve.series.metadata({ StudyInstanceUID: '1.2.3' });
+      expect(api.getImageIdsForDisplaySet({ StudyInstanceUID: '1.2.3' })).toEqual(['wadors:img-1']);
+      // The study is on screen when the root changes mid-session.
+      services.services.displaySetService.getActiveDisplaySets = () => [
+        { StudyInstanceUID: '1.2.3' },
+      ];
+    });
+
+    it('reloads a previously delegated study against the new server instead of skipping it', async () => {
+      const delegateB = makeDelegate();
+      extensionManager.getModuleEntry.mockImplementation(() => ({
+        createDataSource: jest.fn(() => delegateB),
+      }));
+      mod.updateFhirConfig({ dicomWebRoot: 'http://new.test/dicomweb' });
+
+      await api.retrieve.series.metadata({ StudyInstanceUID: '1.2.3' });
+      expect(delegateB.retrieve.series.metadata).toHaveBeenCalledWith(
+        expect.objectContaining({ StudyInstanceUID: '1.2.3' })
+      );
+    });
+
+    it('does not throw image-id lookups at a delegate that failed to rebuild', () => {
+      extensionManager.getModuleEntry.mockImplementation(() => ({
+        createDataSource: jest.fn(() => {
+          throw new Error('new root unreachable');
+        }),
+      }));
+      mod.updateFhirConfig({ dicomWebRoot: 'http://new.test/dicomweb' });
+
+      // Falls back to the FHIR-attachment path (empty here) instead of a
+      // TypeError on a null delegate.
+      expect(() => api.getImageIdsForDisplaySet({ StudyInstanceUID: '1.2.3', images: [] })).not.toThrow();
+      expect(api.getImageIdsForDisplaySet({ StudyInstanceUID: '1.2.3', images: [] })).toEqual([]);
+      expect(api.getImageIdsForInstance({ instance: { StudyInstanceUID: '1.2.3' } })).toBe('');
+    });
+  });
+
   describe('getStudyInstanceUIDs', () => {
     beforeEach(() => {
       init({ fhirBaseUrl: 'http://fhir.test/R4' });
