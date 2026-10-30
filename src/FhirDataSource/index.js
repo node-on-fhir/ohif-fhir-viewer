@@ -1055,31 +1055,33 @@ function createFhirApi(fhirConfig, servicesManager, extensionManager) {
               }
             }
 
-            // If the launch URL includes a gridfsFileId, use it to override
-            // stale extension values in the ImagingStudy. The RIS constructs
-            // the launch URL from the current GridFS file, so it's authoritative.
+            // Record GridFS file candidates per instance, most-authoritative
+            // first. The ImagingStudy's own gridfsFileId wins: it is the
+            // persisted resource and is updated in place on re-import, so it is
+            // the current file. A `gridfsFileId` on the launch URL is only a
+            // point-in-time snapshot — kept as a *fallback* for the case the
+            // ImagingStudy value is itself stale, never as an override. Trying
+            // the resource value first and the URL value second resolves
+            // staleness in either direction (and stops a stale URL param from
+            // masking a perfectly good ImagingStudy — which black-screened the
+            // viewer when the URL id pointed at a deleted GridFS file).
             const urlGridfsFileId = _config.urlParams?.gridfsFileId;
-            if (urlGridfsFileId) {
-              let gridfsInstanceCount = 0;
-              for (const [, instances] of instancesBySeriesUID) {
-                for (const inst of instances) {
-                  if (inst.gridfsFileId) gridfsInstanceCount++;
-                }
+            let gridfsInstanceCount = 0;
+            for (const [, instances] of instancesBySeriesUID) {
+              for (const inst of instances) {
+                if (inst.gridfsFileId) gridfsInstanceCount++;
               }
-              // Only override for single-instance studies (we can't map a single
-              // URL param to multiple instances)
-              if (gridfsInstanceCount === 1) {
-                for (const [, instances] of instancesBySeriesUID) {
-                  for (const inst of instances) {
-                    if (inst.gridfsFileId && inst.gridfsFileId !== urlGridfsFileId) {
-                      console.warn(
-                        '[FHIR] Overriding stale gridfsFileId from ImagingStudy extension:',
-                        inst.gridfsFileId, '→', urlGridfsFileId
-                      );
-                      inst.gridfsFileId = urlGridfsFileId;
-                    }
-                  }
+            }
+            for (const [, instances] of instancesBySeriesUID) {
+              for (const inst of instances) {
+                const candidates = [];
+                if (inst.gridfsFileId) candidates.push(inst.gridfsFileId);
+                // The URL param maps to a single file, so only offer it as a
+                // fallback when the study has exactly one GridFS instance.
+                if (urlGridfsFileId && gridfsInstanceCount === 1) {
+                  candidates.push(urlGridfsFileId);
                 }
+                inst._gridfsCandidates = [...new Set(candidates)];
               }
             }
 
@@ -1150,16 +1152,43 @@ function createFhirApi(fhirConfig, servicesManager, extensionManager) {
                   const batch = fetchTasks.slice(i, i + CONCURRENCY);
                   const results = await Promise.allSettled(
                     batch.map(async ({ inst, seriesMeta }) => {
-                      const filePath = `/api/dicom/files/${inst.gridfsFileId}`;
-                      const arrayBuffer = await fetchDicomFile(
-                        _config.fhirServerRoot,
-                        filePath,
-                        { authToken: getEffectiveAuthToken() }
-                      );
+                      // Try each candidate GridFS id in order (ImagingStudy
+                      // value first, launch-URL fallback second) and use the
+                      // first that actually returns a file. A stale id that
+                      // 404s falls through to the next rather than failing the
+                      // instance outright.
+                      const candidates = inst._gridfsCandidates?.length
+                        ? inst._gridfsCandidates
+                        : [inst.gridfsFileId].filter(Boolean);
+                      let arrayBuffer;
+                      let usedFileId;
+                      let lastError;
+                      for (const fileId of candidates) {
+                        try {
+                          arrayBuffer = await fetchDicomFile(
+                            _config.fhirServerRoot,
+                            `/api/dicom/files/${fileId}`,
+                            { authToken: getEffectiveAuthToken() }
+                          );
+                          usedFileId = fileId;
+                          break;
+                        } catch (err) {
+                          lastError = err;
+                          if (candidates.length > 1) {
+                            console.warn(
+                              '[FHIR] GridFS candidate failed, trying next:',
+                              fileId, '-', err?.message
+                            );
+                          }
+                        }
+                      }
+                      if (!arrayBuffer) {
+                        throw lastError || new Error('No GridFS candidate resolved');
+                      }
 
                       const metadata = parseDicomArrayBuffer(
                         arrayBuffer,
-                        `GridFS:${inst.gridfsFileId}`
+                        `GridFS:${usedFileId}`
                       );
 
                       const blob = new Blob([arrayBuffer], { type: 'application/dicom' });
@@ -1210,24 +1239,65 @@ function createFhirApi(fhirConfig, servicesManager, extensionManager) {
                 }
               }
 
-              console.log(`[FHIR] Loaded ${seriesList.length} series with ${totalInstances} instances from ImagingStudy`);
-
-              DicomMetadataStore.addSeriesMetadata(seriesList, madeInClient);
-
-              for (const [, instances] of instancesBySeriesUID) {
-                if (instances.length > 0) {
-                  DicomMetadataStore.addInstances(instances, madeInClient);
+              // Drop instances whose pixel data could not be fetched (e.g. a
+              // GridFS file that 404s). An instance with no imageId has no
+              // renderable frames, and handing it to the SOP-class handler
+              // crashes display-set creation (getIPPGroups reads
+              // undefined.length) — which takes down the whole route instead of
+              // just that image. Prune them and drop any series left empty, so a
+              // study with some missing files still shows the ones that loaded.
+              let survivingInstances = 0;
+              let droppedInstances = 0;
+              const survivingSeriesList = [];
+              for (const seriesMeta of seriesList) {
+                const all = instancesBySeriesUID.get(seriesMeta.SeriesInstanceUID) || [];
+                const good = all.filter(inst => inst.imageId);
+                droppedInstances += all.length - good.length;
+                if (good.length > 0) {
+                  instancesBySeriesUID.set(seriesMeta.SeriesInstanceUID, good);
+                  survivingSeriesList.push(seriesMeta);
+                  survivingInstances += good.length;
+                } else {
+                  instancesBySeriesUID.delete(seriesMeta.SeriesInstanceUID);
                 }
               }
 
-              _store.loadedStudies.add(StudyInstanceUID);
-
-              const study = DicomMetadataStore.getStudy(StudyInstanceUID, madeInClient);
-              if (study) {
-                study.isLoaded = true;
+              if (droppedInstances > 0) {
+                console.warn(`[FHIR] Dropped ${droppedInstances} instance(s) with no loadable pixel data`);
+                _servicesManager?.services?.uiNotificationService?.show({
+                  title: 'FHIR',
+                  message:
+                    survivingInstances > 0
+                      ? `${droppedInstances} image(s) in this study could not be loaded and were skipped.`
+                      : 'The pixel data for this study could not be loaded.',
+                  type: survivingInstances > 0 ? 'warning' : 'error',
+                  duration: 8000,
+                });
               }
 
-              return;
+              if (survivingInstances > 0) {
+                console.log(`[FHIR] Loaded ${survivingSeriesList.length} series with ${survivingInstances} instances from ImagingStudy`);
+
+                DicomMetadataStore.addSeriesMetadata(survivingSeriesList, madeInClient);
+
+                for (const [, instances] of instancesBySeriesUID) {
+                  if (instances.length > 0) {
+                    DicomMetadataStore.addInstances(instances, madeInClient);
+                  }
+                }
+
+                _store.loadedStudies.add(StudyInstanceUID);
+
+                const study = DicomMetadataStore.getStudy(StudyInstanceUID, madeInClient);
+                if (study) {
+                  study.isLoaded = true;
+                }
+
+                return;
+              }
+              // Nothing renderable from the ImagingStudy — fall through to the
+              // DICOMweb / DocumentReference paths below rather than registering
+              // a study with no display sets.
             }
           }
 
